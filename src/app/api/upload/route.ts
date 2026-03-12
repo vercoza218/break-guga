@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 export async function POST(request: NextRequest) {
@@ -15,9 +15,12 @@ export async function POST(request: NextRequest) {
 
   const ext = path.extname(file.name) || '.png';
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-  const filepath = path.join(process.cwd(), 'public', 'uploads', filename);
+
+  const uploadsDir = path.join(process.env.DATA_DIR || process.cwd(), 'uploads');
+  await mkdir(uploadsDir, { recursive: true });
+  const filepath = path.join(uploadsDir, filename);
 
   await writeFile(filepath, buffer);
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  return NextResponse.json({ url: `/api/uploads/${filename}` });
 }
