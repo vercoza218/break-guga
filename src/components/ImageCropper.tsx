@@ -60,6 +60,12 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
     }, 'image/png');
   };
 
+  const handleSaveOriginal = async () => {
+    const res = await fetch(imageSrc);
+    const blob = await res.blob();
+    onCropComplete(blob);
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
       <div className="flex-1 relative">
@@ -97,10 +103,16 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
             Cancelar
           </button>
           <button
+            onClick={handleSaveOriginal}
+            className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-500 transition-colors min-h-[44px]"
+          >
+            Salvar Original
+          </button>
+          <button
             onClick={handleSave}
             className="flex-1 bg-gold text-black font-bold py-3 rounded-lg hover:bg-gold-light transition-colors min-h-[44px]"
           >
-            Recortar e Salvar
+            Recortar
           </button>
         </div>
       </div>
