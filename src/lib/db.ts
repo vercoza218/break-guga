@@ -1,0 +1,41 @@
+import Database from 'better-sqlite3';
+import path from 'path';
+
+const dbPath = path.join(process.cwd(), 'data.db');
+
+let db: Database.Database;
+
+function getDb(): Database.Database {
+  if (!db) {
+    db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
+    initDb(db);
+  }
+  return db;
+}
+
+function initDb(db: Database.Database) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      stock INTEGER NOT NULL DEFAULT 0,
+      price REAL NOT NULL,
+      image TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS queue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      buyer_name TEXT NOT NULL,
+      product_id INTEGER NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1,
+      position INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
+  `);
+}
+
+export default getDb;

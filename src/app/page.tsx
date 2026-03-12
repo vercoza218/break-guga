@@ -1,101 +1,179 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useState, useCallback } from 'react';
+
+interface Product {
+  id: number;
+  name: string;
+  stock: number;
+  price: number;
+  image: string | null;
+}
+
+export default function StorePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
+
+  const fetchProducts = useCallback(async () => {
+    const res = await fetch('/api/products');
+    const data = await res.json();
+    setProducts(data);
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+    const interval = setInterval(fetchProducts, 15000);
+    return () => clearInterval(interval);
+  }, [fetchProducts]);
+
+  const setQty = (productId: number, qty: number) => {
+    setQuantities((prev) => ({ ...prev, [productId]: qty }));
+  };
+
+  const copyPix = async () => {
+    await navigator.clipboard.writeText('abracarteiratcg@gmail.com');
+    alert('Chave PIX copiada!');
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div>
+      <h2 className="text-xl md:text-2xl font-bold text-gold mb-6">
+        Produtos Disponíveis
+      </h2>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {products.length === 0 && (
+        <p className="text-gray-400 text-center py-12">
+          Nenhum produto cadastrado ainda.
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        {products.map((product) => {
+          const qty = quantities[product.id] || 0;
+          const total = qty * product.price;
+          const soldOut = product.stock <= 0;
+
+          return (
+            <div
+              key={product.id}
+              className={`bg-dark-card rounded-xl border transition-all duration-200 overflow-hidden ${
+                soldOut
+                  ? 'border-gray-700 opacity-60'
+                  : 'border-gold/20 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/5'
+              }`}
+            >
+              <div className="aspect-[4/3] bg-dark-surface relative overflow-hidden">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">
+                    🎴
+                  </div>
+                )}
+                {soldOut && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                    <span className="text-red-500 font-bold text-xl tracking-wider">
+                      ESGOTADO
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4">
+                <h3 className="font-bold text-lg text-white mb-1 truncate">
+                  {product.name}
+                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-gold font-bold text-lg">
+                    R$ {product.price.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    Estoque: {product.stock}
+                  </span>
+                </div>
+
+                {!soldOut && (
+                  <>
+                    <div className="flex items-center gap-3 mb-3">
+                      <label className="text-sm text-gray-400">Qtd:</label>
+                      <select
+                        value={qty}
+                        onChange={(e) =>
+                          setQty(product.id, Number(e.target.value))
+                        }
+                        className="flex-1 bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-gold focus:outline-none min-h-[44px]"
+                      >
+                        <option value={0}>Selecione</option>
+                        {Array.from({ length: product.stock }, (_, i) => i + 1).map(
+                          (n) => (
+                            <option key={n} value={n}>
+                              {n}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </div>
+
+                    {qty > 0 && (
+                      <div className="space-y-3">
+                        <div className="bg-dark-surface rounded-lg p-3 text-center">
+                          <span className="text-sm text-gray-400">Total:</span>
+                          <span className="text-gold font-bold text-xl ml-2">
+                            R$ {total.toFixed(2)}
+                          </span>
+                        </div>
+
+                        <PaymentBlock onCopyPix={copyPix} />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PaymentBlock({ onCopyPix }: { onCopyPix: () => void }) {
+  return (
+    <div className="bg-dark-surface border border-gold/20 rounded-lg p-4 space-y-3">
+      <h4 className="text-gold font-semibold text-sm">Pagamento</h4>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400 shrink-0">PIX:</span>
+          <span className="text-xs text-white truncate flex-1">
+            abracarteiratcg@gmail.com
+          </span>
+          <button
+            onClick={onCopyPix}
+            className="bg-gold text-black text-xs font-bold px-3 py-2 rounded-lg hover:bg-gold-light transition-colors min-h-[44px] shrink-0"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Copiar
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
+
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          href="https://wa.me/5581997492084"
           target="_blank"
           rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition-colors min-h-[44px] text-sm"
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
+          📱 Enviar comprovante via WhatsApp
         </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      <p className="text-xs text-gray-400 leading-relaxed">
+        Para pagar no crédito em até 12x (consulte juros), fale no número acima
+        para uma simulação.
+      </p>
     </div>
   );
 }
