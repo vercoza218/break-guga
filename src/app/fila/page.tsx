@@ -7,6 +7,7 @@ interface QueueItem {
   buyer_name: string;
   product_id: number;
   product_name: string;
+  product_image: string | null;
   quantity: number;
   position: number;
 }
@@ -38,67 +39,47 @@ export default function QueuePage() {
         </p>
       )}
 
-      {/* Mobile: Cards */}
-      <div className="md:hidden space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {queue.map((item) => (
           <div
             key={item.id}
-            className="bg-dark-card border border-gold/20 rounded-xl p-4 flex items-center gap-4"
+            className="bg-dark-card border border-gold/20 rounded-xl overflow-hidden relative"
           >
-            <div className="bg-gold text-black font-bold text-lg w-10 h-10 rounded-full flex items-center justify-center shrink-0">
+            {/* Position badge */}
+            <div className="absolute top-2 left-2 z-10 bg-gold text-black font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
               {item.position}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-white truncate">{item.buyer_name}</p>
-              <p className="text-sm text-gray-400 truncate">
+
+            {/* Quantity badge */}
+            <div className="absolute top-2 right-2 z-10 bg-dark/80 backdrop-blur text-gold font-bold text-sm px-2 py-1 rounded-lg border border-gold/30">
+              x{item.quantity}
+            </div>
+
+            {/* Product image */}
+            <div className="aspect-square bg-dark-surface flex items-center justify-center overflow-hidden">
+              {item.product_image ? (
+                <img
+                  src={item.product_image}
+                  alt={item.product_name}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-5xl">🎴</span>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="p-3 text-center">
+              <p className="font-bold text-white text-sm md:text-base truncate">
+                {item.buyer_name}
+              </p>
+              <p className="text-xs text-gray-400 truncate">
                 {item.product_name}
               </p>
-            </div>
-            <div className="text-gold font-bold shrink-0">
-              x{item.quantity}
             </div>
           </div>
         ))}
       </div>
-
-      {/* Desktop: Table */}
-      {queue.length > 0 && (
-        <div className="hidden md:block">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gold/30 text-gold text-left">
-                <th className="py-3 px-4 w-20">#</th>
-                <th className="py-3 px-4">Comprador</th>
-                <th className="py-3 px-4">Produto</th>
-                <th className="py-3 px-4 w-28 text-center">Quantidade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {queue.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-gray-800 hover:bg-dark-card/50 transition-colors"
-                >
-                  <td className="py-3 px-4">
-                    <span className="bg-gold text-black font-bold w-8 h-8 rounded-full inline-flex items-center justify-center text-sm">
-                      {item.position}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-white">
-                    {item.buyer_name}
-                  </td>
-                  <td className="py-3 px-4 text-gray-300">
-                    {item.product_name}
-                  </td>
-                  <td className="py-3 px-4 text-center text-gold font-bold">
-                    {item.quantity}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }

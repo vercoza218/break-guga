@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, FormEvent } from 'react';
+import { useEffect, useState, useCallback, FormEvent, useRef } from 'react';
+import dynamic from 'next/dynamic';
+
+const ImageCropper = dynamic(() => import('@/components/ImageCropper'), { ssr: false });
 
 interface Product {
   id: number;
@@ -139,12 +142,15 @@ function ProductsTab() {
   const [name, setName] = useState('');
   const [stock, setStock] = useState('');
   const [price, setPrice] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editStock, setEditStock] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProducts = useCallback(async () => {
     const res = await fetch('/api/products');
@@ -156,9 +162,9 @@ function ProductsTab() {
     fetchProducts();
   }, [fetchProducts]);
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const uploadBlob = async (blob: Blob): Promise<string | null> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', blob, 'product.png');
     const res = await fetch('/api/upload', { method: 'POST', body: formData });
     if (res.ok) {
       const data = await res.json();
@@ -167,13 +173,27 @@ function ProductsTab() {
     return null;
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setCropperSrc(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropDone = (blob: Blob) => {
+    setCroppedBlob(blob);
+    setImagePreview(URL.createObjectURL(blob));
+    setCropperSrc(null);
+  };
+
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     let imageUrl: string | null = null;
-    if (imageFile) {
-      imageUrl = await uploadImage(imageFile);
+    if (croppedBlob) {
+      imageUrl = await uploadBlob(croppedBlob);
     }
 
     await fetch('/api/products', {
@@ -190,7 +210,9 @@ function ProductsTab() {
     setName('');
     setStock('');
     setPrice('');
-    setImageFile(null);
+    setCroppedBlob(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setLoading(false);
     fetchProducts();
   };
@@ -259,12 +281,21 @@ function ProductsTab() {
             className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
           />
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+            onChange={handleFileSelect}
             className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px] file:mr-3 file:bg-gold file:text-black file:border-0 file:rounded file:px-3 file:py-1 file:font-medium file:cursor-pointer"
           />
         </div>
+
+        {imagePreview && (
+          <div className="flex items-center gap-3">
+            <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-lg object-contain bg-dark-surface" />
+            <span className="text-sm text-green-400">Imagem recortada</span>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -273,6 +304,17 @@ function ProductsTab() {
           {loading ? 'Salvando...' : 'Cadastrar Produto'}
         </button>
       </form>
+
+      {cropperSrc && (
+        <ImageCropper
+          imageSrc={cropperSrc}
+          onCropComplete={handleCropDone}
+          onCancel={() => {
+            setCropperSrc(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }}
+        />
+      )}
 
       <h3 className="text-lg font-bold text-gold">Produtos Cadastrados</h3>
 
@@ -406,6 +448,7 @@ function QueueTab() {
     setProductId('');
     setQuantity('1');
     fetchQueue();
+    fetchProducts();
   };
 
   const handleRemove = async (id: number) => {
