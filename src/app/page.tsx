@@ -62,12 +62,12 @@ export default function StorePage() {
                   : 'border-gold/20 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/5'
               }`}
             >
-              <div className="aspect-[4/3] bg-dark-surface relative overflow-hidden">
+              <div className="aspect-[3/4] bg-dark-surface relative overflow-hidden">
                 {product.image ? (
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-4xl">

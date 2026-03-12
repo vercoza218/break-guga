@@ -56,7 +56,7 @@ export default function QueuePage() {
             </div>
 
             {/* Product image */}
-            <div className="aspect-square bg-dark-surface flex items-center justify-center overflow-hidden">
+            <div className="aspect-[3/4] bg-dark-surface flex items-center justify-center overflow-hidden">
               {item.product_image ? (
                 <img
                   src={item.product_image}
