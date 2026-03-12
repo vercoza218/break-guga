@@ -66,11 +66,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   const id = params.id;
 
   const existing = db.prepare(`
-    SELECT q.*, p.name as product_name
+    SELECT q.*, p.name as product_name, p.image as product_image
     FROM queue q
     JOIN products p ON q.product_id = p.id
     WHERE q.id = ?
-  `).get(id) as { id: number; buyer_name: string; product_id: number; product_name: string; quantity: number } | undefined;
+  `).get(id) as { id: number; buyer_name: string; product_id: number; product_name: string; product_image: string | null; quantity: number } | undefined;
 
   if (!existing) {
     return NextResponse.json({ error: 'Item não encontrado na fila' }, { status: 404 });
@@ -79,8 +79,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   const removeFromQueue = db.transaction(() => {
     // Insert into history
     db.prepare(
-      'INSERT INTO history (buyer_name, product_id, product_name, quantity) VALUES (?, ?, ?, ?)'
-    ).run(existing.buyer_name, existing.product_id, existing.product_name, existing.quantity);
+      'INSERT INTO history (buyer_name, product_id, product_name, product_image, quantity) VALUES (?, ?, ?, ?, ?)'
+    ).run(existing.buyer_name, existing.product_id, existing.product_name, existing.product_image, existing.quantity);
 
     // Delete from queue
     db.prepare('DELETE FROM queue WHERE id = ?').run(id);

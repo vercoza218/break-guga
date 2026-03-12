@@ -42,10 +42,17 @@ function initDb(db: Database.Database) {
       buyer_name TEXT NOT NULL,
       product_id INTEGER,
       product_name TEXT NOT NULL,
+      product_image TEXT,
       quantity INTEGER NOT NULL DEFAULT 1,
       opened_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migration: add product_image column if missing (for existing databases)
+  const cols = db.prepare("PRAGMA table_info(history)").all() as { name: string }[];
+  if (!cols.some(c => c.name === 'product_image')) {
+    db.exec("ALTER TABLE history ADD COLUMN product_image TEXT");
+  }
 }
 
 export default getDb;
