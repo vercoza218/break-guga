@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
+import { bumpVersion } from '@/lib/version';
 
 export async function PUT(request: NextRequest) {
   const db = getDb();
@@ -30,6 +31,8 @@ export async function PUT(request: NextRequest) {
     db.prepare('UPDATE queue SET position = ? WHERE id = ?').run(current.position, target.id);
   });
   swap();
+
+  bumpVersion();
 
   return NextResponse.json({ success: true });
 }

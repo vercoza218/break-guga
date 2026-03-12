@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
+import { bumpVersion } from '@/lib/version';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
     JOIN products p ON q.product_id = p.id
     WHERE q.id = ?
   `).get(lastId);
+
+  bumpVersion();
 
   return NextResponse.json(entry, { status: 201 });
 }

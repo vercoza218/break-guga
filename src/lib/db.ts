@@ -36,6 +36,15 @@ function initDb(db: Database.Database) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      buyer_name TEXT NOT NULL,
+      product_id INTEGER,
+      product_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1,
+      opened_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 }
 

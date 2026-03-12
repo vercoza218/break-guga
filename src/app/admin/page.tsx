@@ -26,7 +26,7 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'products' | 'queue'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history'>('products');
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -92,11 +92,21 @@ export default function AdminPage() {
           onClick={() => setActiveTab('queue')}
           className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
             activeTab === 'queue'
-              ? 'text-gold border-b-2 border-gold'
+              ? 'text-green-400 border-b-2 border-green-400'
               : 'text-gray-400'
           }`}
         >
           Fila de Abertura
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
+            activeTab === 'history'
+              ? 'text-red-400 border-b-2 border-red-400'
+              : 'text-gray-400'
+          }`}
+        >
+          Ja Abertos
         </button>
       </div>
 
@@ -117,11 +127,21 @@ export default function AdminPage() {
             onClick={() => setActiveTab('queue')}
             className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'queue'
-                ? 'bg-gold text-black'
+                ? 'bg-green-600 text-white'
                 : 'text-gray-300 hover:bg-dark-surface'
             }`}
           >
             Fila de Abertura
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'history'
+                ? 'bg-red-600 text-white'
+                : 'text-gray-300 hover:bg-dark-surface'
+            }`}
+          >
+            Ja Abertos
           </button>
         </nav>
       </div>
@@ -130,6 +150,7 @@ export default function AdminPage() {
       <div className="flex-1 min-w-0">
         {activeTab === 'products' && <ProductsTab />}
         {activeTab === 'queue' && <QueueTab />}
+        {activeTab === 'history' && <HistoryTab />}
       </div>
     </div>
   );
@@ -415,6 +436,9 @@ function QueueTab() {
   const [buyerName, setBuyerName] = useState('');
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [editingQueueId, setEditingQueueId] = useState<number | null>(null);
+  const [editBuyerName, setEditBuyerName] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
 
   const fetchQueue = useCallback(async () => {
     const res = await fetch('/api/queue');
@@ -452,9 +476,16 @@ function QueueTab() {
   };
 
   const handleRemove = async (id: number) => {
-    if (!confirm('Remover este item da fila?')) return;
+    if (!confirm('Remover este item da fila (sem registrar no historico)?')) return;
     await fetch(`/api/queue/${id}`, { method: 'DELETE' });
     fetchQueue();
+    fetchProducts();
+  };
+
+  const handleMarkOpened = async (id: number) => {
+    await fetch(`/api/queue/${id}`, { method: 'DELETE' });
+    fetchQueue();
+    fetchProducts();
   };
 
   const handleReorder = async (id: number, direction: 'up' | 'down') => {
@@ -466,13 +497,33 @@ function QueueTab() {
     fetchQueue();
   };
 
+  const startEditQueue = (item: QueueItem) => {
+    setEditingQueueId(item.id);
+    setEditBuyerName(item.buyer_name);
+    setEditQuantity(item.quantity.toString());
+  };
+
+  const handleEditQueue = async (id: number) => {
+    await fetch(`/api/queue/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        buyer_name: editBuyerName,
+        quantity: parseInt(editQuantity),
+      }),
+    });
+    setEditingQueueId(null);
+    fetchQueue();
+    fetchProducts();
+  };
+
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-gold">Adicionar à Fila</h3>
+      <h3 className="text-lg font-bold text-green-400">Adicionar a Fila</h3>
 
       <form
         onSubmit={handleAdd}
-        className="bg-dark-card border border-gold/20 rounded-xl p-4 md:p-6 space-y-4"
+        className="bg-dark-card border border-green-500/30 rounded-xl p-4 md:p-6 space-y-4"
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
@@ -481,18 +532,18 @@ function QueueTab() {
             value={buyerName}
             onChange={(e) => setBuyerName(e.target.value)}
             required
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
+            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
           />
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
             required
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
+            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
           >
             <option value="">Selecione o produto</option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name}
+                {p.name} (estoque: {p.stock})
               </option>
             ))}
           </select>
@@ -503,18 +554,18 @@ function QueueTab() {
             onChange={(e) => setQuantity(e.target.value)}
             required
             min={1}
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
+            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
           />
         </div>
         <button
           type="submit"
-          className="w-full md:w-auto bg-gold text-black font-bold px-8 py-3 rounded-lg hover:bg-gold-light transition-colors min-h-[44px]"
+          className="w-full md:w-auto bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-500 transition-colors min-h-[44px]"
         >
-          Adicionar à Fila
+          Adicionar a Fila
         </button>
       </form>
 
-      <h3 className="text-lg font-bold text-gold">Fila Atual</h3>
+      <h3 className="text-lg font-bold text-green-400">Fila Atual</h3>
 
       {queue.length === 0 && (
         <p className="text-gray-400">Nenhum item na fila.</p>
@@ -524,41 +575,148 @@ function QueueTab() {
         {queue.map((item, index) => (
           <div
             key={item.id}
-            className="bg-dark-card border border-gold/20 rounded-xl p-4 flex items-center gap-3"
+            className="bg-dark-card border border-green-500/30 rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-3"
           >
-            <div className="bg-gold text-black font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+            <div className="bg-green-500 text-black font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shrink-0">
               {item.position}
+            </div>
+
+            {editingQueueId === item.id ? (
+              <div className="flex-1 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={editBuyerName}
+                    onChange={(e) => setEditBuyerName(e.target.value)}
+                    placeholder="Nome do comprador"
+                    className="bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
+                  />
+                  <input
+                    type="number"
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(e.target.value)}
+                    min={1}
+                    placeholder="Quantidade"
+                    className="bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditQueue(item.id)}
+                    className="bg-green-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-500 transition-colors min-h-[44px] text-sm"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => setEditingQueueId(null)}
+                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition-colors min-h-[44px] text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-white truncate">{item.buyer_name}</p>
+                  <p className="text-sm text-gray-400 truncate">
+                    {item.product_name} (x{item.quantity})
+                  </p>
+                </div>
+                <div className="flex gap-1 shrink-0 flex-wrap">
+                  <button
+                    onClick={() => handleReorder(item.id, 'up')}
+                    disabled={index === 0}
+                    className="bg-dark-surface text-gray-300 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-dark-lighter transition-colors disabled:opacity-30"
+                    title="Mover para cima"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => handleReorder(item.id, 'down')}
+                    disabled={index === queue.length - 1}
+                    className="bg-dark-surface text-gray-300 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-dark-lighter transition-colors disabled:opacity-30"
+                    title="Mover para baixo"
+                  >
+                    ▼
+                  </button>
+                  <button
+                    onClick={() => startEditQueue(item)}
+                    className="bg-blue-600/80 text-white w-10 h-10 rounded-lg flex items-center justify-center hover:bg-blue-500 transition-colors"
+                    title="Editar"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={() => handleMarkOpened(item.id)}
+                    className="bg-green-600/80 text-white h-10 px-3 rounded-lg flex items-center justify-center hover:bg-green-500 transition-colors text-xs font-bold"
+                    title="Marcar como aberto"
+                  >
+                    Ja Aberto
+                  </button>
+                  <button
+                    onClick={() => handleRemove(item.id)}
+                    className="bg-red-600/80 text-white w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-500 transition-colors"
+                    title="Remover sem registrar"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* =================== HISTORY TAB =================== */
+
+interface HistoryItem {
+  id: number;
+  buyer_name: string;
+  product_name: string;
+  quantity: number;
+  opened_at: string;
+}
+
+function HistoryTab() {
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  const fetchHistory = useCallback(async () => {
+    const res = await fetch('/api/history');
+    const data = await res.json();
+    setHistory(data);
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-bold text-red-400">Ja Abertos</h3>
+
+      {history.length === 0 && (
+        <p className="text-gray-400">Nenhuma abertura registrada.</p>
+      )}
+
+      <div className="space-y-3">
+        {history.map((item) => (
+          <div
+            key={item.id}
+            className="bg-dark-card border border-red-500/30 rounded-xl p-4 flex items-center gap-3"
+          >
+            <div className="bg-red-500 text-white font-bold text-xs w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+              x{item.quantity}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-white truncate">{item.buyer_name}</p>
-              <p className="text-sm text-gray-400 truncate">
-                {item.product_name} (x{item.quantity})
-              </p>
+              <p className="text-sm text-gray-400 truncate">{item.product_name}</p>
             </div>
-            <div className="flex gap-1 shrink-0">
-              <button
-                onClick={() => handleReorder(item.id, 'up')}
-                disabled={index === 0}
-                className="bg-dark-surface text-gray-300 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-dark-lighter transition-colors disabled:opacity-30"
-                title="Mover para cima"
-              >
-                ▲
-              </button>
-              <button
-                onClick={() => handleReorder(item.id, 'down')}
-                disabled={index === queue.length - 1}
-                className="bg-dark-surface text-gray-300 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-dark-lighter transition-colors disabled:opacity-30"
-                title="Mover para baixo"
-              >
-                ▼
-              </button>
-              <button
-                onClick={() => handleRemove(item.id)}
-                className="bg-red-600/80 text-white w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-500 transition-colors"
-                title="Remover"
-              >
-                ✕
-              </button>
+            <div className="text-xs text-gray-500 shrink-0">
+              {new Date(item.opened_at).toLocaleString('pt-BR')}
             </div>
           </div>
         ))}
