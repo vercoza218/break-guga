@@ -62,7 +62,7 @@ export default function StorePage() {
                   : 'border-gold/20 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/5'
               }`}
             >
-              <div className="aspect-[3/4] bg-dark-surface relative overflow-hidden">
+              <div className="aspect-[9/14] bg-dark-surface relative overflow-hidden">
                 {product.image ? (
                   <img
                     src={product.image}
