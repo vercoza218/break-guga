@@ -9,16 +9,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gold: {
-          DEFAULT: '#FFD700',
-          dark: '#B8960C',
-          light: '#FFE44D',
-        },
-        dark: {
-          DEFAULT: '#0f0f0f',
-          card: '#1a1a2e',
-          surface: '#16213e',
-          lighter: '#1f2937',
+        primary: {
+          DEFAULT: '#2563eb',
+          light: '#3b82f6',
+          dark: '#1d4ed8',
         },
       },
     },

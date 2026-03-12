@@ -48,9 +48,9 @@ export default function AdminPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <form
           onSubmit={handleLogin}
-          className="bg-dark-card border border-gold/20 rounded-xl p-8 w-full max-w-sm space-y-4"
+          className="bg-white border border-gray-200 rounded-2xl p-8 w-full max-w-sm space-y-4 shadow-sm"
         >
-          <h2 className="text-xl font-bold text-gold text-center">
+          <h2 className="text-xl font-bold text-gray-800 text-center">
             Admin Login
           </h2>
           {error && (
@@ -61,11 +61,11 @@ export default function AdminPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Senha"
-            className="w-full bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
+            className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
           />
           <button
             type="submit"
-            className="w-full bg-gold text-black font-bold py-3 rounded-lg hover:bg-gold-light transition-colors min-h-[44px]"
+            className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-dark transition-colors min-h-[44px]"
           >
             Entrar
           </button>
@@ -77,12 +77,12 @@ export default function AdminPage() {
   return (
     <div className="md:flex md:gap-6">
       {/* Mobile: Tabs */}
-      <div className="md:hidden flex border-b border-gold/30 mb-6 overflow-x-auto">
+      <div className="md:hidden flex border-b border-gray-200 mb-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('products')}
           className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
             activeTab === 'products'
-              ? 'text-gold border-b-2 border-gold'
+              ? 'text-primary border-b-2 border-primary'
               : 'text-gray-400'
           }`}
         >
@@ -92,7 +92,7 @@ export default function AdminPage() {
           onClick={() => setActiveTab('queue')}
           className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
             activeTab === 'queue'
-              ? 'text-green-400 border-b-2 border-green-400'
+              ? 'text-green-600 border-b-2 border-green-500'
               : 'text-gray-400'
           }`}
         >
@@ -102,7 +102,7 @@ export default function AdminPage() {
           onClick={() => setActiveTab('history')}
           className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
             activeTab === 'history'
-              ? 'text-red-400 border-b-2 border-red-400'
+              ? 'text-red-500 border-b-2 border-red-500'
               : 'text-gray-400'
           }`}
         >
@@ -112,33 +112,33 @@ export default function AdminPage() {
 
       {/* Desktop: Sidebar */}
       <div className="hidden md:block w-56 shrink-0">
-        <nav className="bg-dark-card border border-gold/20 rounded-xl p-2 sticky top-20 space-y-1">
+        <nav className="bg-white border border-gray-200 rounded-2xl p-2 sticky top-20 space-y-1 shadow-sm">
           <button
             onClick={() => setActiveTab('products')}
-            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
               activeTab === 'products'
-                ? 'bg-gold text-black'
-                : 'text-gray-300 hover:bg-dark-surface'
+                ? 'bg-primary text-white'
+                : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             Produtos
           </button>
           <button
             onClick={() => setActiveTab('queue')}
-            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
               activeTab === 'queue'
-                ? 'bg-green-600 text-white'
-                : 'text-gray-300 hover:bg-dark-surface'
+                ? 'bg-green-500 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             Fila de Abertura
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
               activeTab === 'history'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:bg-dark-surface'
+                ? 'bg-red-500 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             Ja Abertos
@@ -267,11 +267,11 @@ function ProductsTab() {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-gold">Cadastrar Produto</h3>
+      <h3 className="text-lg font-bold text-gray-800">Cadastrar Produto</h3>
 
       <form
         onSubmit={handleCreate}
-        className="bg-dark-card border border-gold/20 rounded-xl p-4 md:p-6 space-y-4"
+        className="bg-white border border-gray-200 rounded-2xl p-4 md:p-6 space-y-4 shadow-sm"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
@@ -280,7 +280,7 @@ function ProductsTab() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
           />
           <input
             type="number"
@@ -289,7 +289,7 @@ function ProductsTab() {
             onChange={(e) => setStock(e.target.value)}
             required
             min={0}
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
           />
           <input
             type="number"
@@ -299,28 +299,28 @@ function ProductsTab() {
             required
             min={0}
             step="0.01"
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px]"
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
           />
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-gold focus:outline-none min-h-[44px] file:mr-3 file:bg-gold file:text-black file:border-0 file:rounded file:px-3 file:py-1 file:font-medium file:cursor-pointer"
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px] file:mr-3 file:bg-primary file:text-white file:border-0 file:rounded file:px-3 file:py-1 file:font-medium file:cursor-pointer"
           />
         </div>
 
         {imagePreview && (
           <div className="flex items-center gap-3">
-            <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-lg object-contain bg-dark-surface" />
-            <span className="text-sm text-green-400">Imagem recortada</span>
+            <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-xl object-contain bg-gray-50" />
+            <span className="text-sm text-green-600">Imagem pronta</span>
           </div>
         )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full md:w-auto bg-gold text-black font-bold px-8 py-3 rounded-lg hover:bg-gold-light transition-colors min-h-[44px] disabled:opacity-50"
+          className="w-full md:w-auto bg-primary text-white font-bold px-8 py-3 rounded-xl hover:bg-primary-dark transition-colors min-h-[44px] disabled:opacity-50"
         >
           {loading ? 'Salvando...' : 'Cadastrar Produto'}
         </button>
@@ -337,7 +337,7 @@ function ProductsTab() {
         />
       )}
 
-      <h3 className="text-lg font-bold text-gold">Produtos Cadastrados</h3>
+      <h3 className="text-lg font-bold text-gray-800">Produtos Cadastrados</h3>
 
       {products.length === 0 && (
         <p className="text-gray-400">Nenhum produto cadastrado.</p>
@@ -347,13 +347,13 @@ function ProductsTab() {
         {products.map((product) => (
           <div
             key={product.id}
-            className="bg-dark-card border border-gold/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-4"
+            className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 shadow-sm"
           >
             {product.image && (
               <img
                 src={product.image}
                 alt={product.name}
-                className="w-16 h-16 rounded-lg object-cover shrink-0"
+                className="w-16 h-16 rounded-xl object-cover shrink-0"
               />
             )}
 
@@ -364,14 +364,14 @@ function ProductsTab() {
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-gold focus:outline-none min-h-[44px]"
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
                   />
                   <input
                     type="number"
                     value={editStock}
                     onChange={(e) => setEditStock(e.target.value)}
                     min={0}
-                    className="bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-gold focus:outline-none min-h-[44px]"
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
                   />
                   <input
                     type="number"
@@ -379,19 +379,19 @@ function ProductsTab() {
                     onChange={(e) => setEditPrice(e.target.value)}
                     min={0}
                     step="0.01"
-                    className="bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-gold focus:outline-none min-h-[44px]"
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
                   />
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(product.id)}
-                    className="bg-green-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-500 transition-colors min-h-[44px] text-sm"
+                    className="bg-green-500 text-white font-bold px-4 py-2 rounded-xl hover:bg-green-600 transition-colors min-h-[44px] text-sm"
                   >
                     Salvar
                   </button>
                   <button
                     onClick={() => setEditingId(null)}
-                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition-colors min-h-[44px] text-sm"
+                    className="bg-gray-200 text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-300 transition-colors min-h-[44px] text-sm"
                   >
                     Cancelar
                   </button>
@@ -400,21 +400,21 @@ function ProductsTab() {
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white">{product.name}</p>
-                  <p className="text-sm text-gray-400">
+                  <p className="font-bold text-gray-800">{product.name}</p>
+                  <p className="text-sm text-gray-500">
                     Estoque: {product.stock} | R$ {product.price.toFixed(2)}
                   </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => startEdit(product)}
-                    className="bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors min-h-[44px]"
+                    className="bg-primary text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-primary-dark transition-colors min-h-[44px]"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => handleDelete(product.id)}
-                    className="bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-red-500 transition-colors min-h-[44px]"
+                    className="bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-600 transition-colors min-h-[44px]"
                   >
                     Excluir
                   </button>
@@ -476,7 +476,7 @@ function QueueTab() {
   };
 
   const handleRemove = async (id: number) => {
-    if (!confirm('Remover este item da fila (sem registrar no historico)?')) return;
+    if (!confirm('Remover este item da fila?')) return;
     await fetch(`/api/queue/${id}`, { method: 'DELETE' });
     fetchQueue();
     fetchProducts();
@@ -519,11 +519,11 @@ function QueueTab() {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-green-400">Adicionar a Fila</h3>
+      <h3 className="text-lg font-bold text-green-600">Adicionar a Fila</h3>
 
       <form
         onSubmit={handleAdd}
-        className="bg-dark-card border border-green-500/30 rounded-xl p-4 md:p-6 space-y-4"
+        className="bg-white border border-green-200 rounded-2xl p-4 md:p-6 space-y-4 shadow-sm"
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
@@ -532,13 +532,13 @@ function QueueTab() {
             value={buyerName}
             onChange={(e) => setBuyerName(e.target.value)}
             required
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-green-500 focus:outline-none min-h-[44px]"
           />
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
             required
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-green-500 focus:outline-none min-h-[44px]"
           >
             <option value="">Selecione o produto</option>
             {products.map((p) => (
@@ -554,18 +554,18 @@ function QueueTab() {
             onChange={(e) => setQuantity(e.target.value)}
             required
             min={1}
-            className="bg-dark-surface border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-green-500 focus:outline-none min-h-[44px]"
           />
         </div>
         <button
           type="submit"
-          className="w-full md:w-auto bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-500 transition-colors min-h-[44px]"
+          className="w-full md:w-auto bg-green-500 text-white font-bold px-8 py-3 rounded-xl hover:bg-green-600 transition-colors min-h-[44px]"
         >
           Adicionar a Fila
         </button>
       </form>
 
-      <h3 className="text-lg font-bold text-green-400">Fila Atual</h3>
+      <h3 className="text-lg font-bold text-green-600">Fila Atual</h3>
 
       {queue.length === 0 && (
         <p className="text-gray-400">Nenhum item na fila.</p>
@@ -575,9 +575,9 @@ function QueueTab() {
         {queue.map((item, index) => (
           <div
             key={item.id}
-            className="bg-dark-card border border-green-500/30 rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-3"
+            className="bg-white border border-green-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-3 shadow-sm"
           >
-            <div className="bg-green-500 text-black font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+            <div className="bg-green-500 text-white font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shrink-0">
               {item.position}
             </div>
 
@@ -589,7 +589,7 @@ function QueueTab() {
                     value={editBuyerName}
                     onChange={(e) => setEditBuyerName(e.target.value)}
                     placeholder="Nome do comprador"
-                    className="bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-green-500 focus:outline-none min-h-[44px]"
                   />
                   <input
                     type="number"
@@ -597,19 +597,19 @@ function QueueTab() {
                     onChange={(e) => setEditQuantity(e.target.value)}
                     min={1}
                     placeholder="Quantidade"
-                    className="bg-dark-surface border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-green-500 focus:outline-none min-h-[44px]"
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-green-500 focus:outline-none min-h-[44px]"
                   />
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEditQueue(item.id)}
-                    className="bg-green-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-500 transition-colors min-h-[44px] text-sm"
+                    className="bg-green-500 text-white font-bold px-4 py-2 rounded-xl hover:bg-green-600 transition-colors min-h-[44px] text-sm"
                   >
                     Salvar
                   </button>
                   <button
                     onClick={() => setEditingQueueId(null)}
-                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition-colors min-h-[44px] text-sm"
+                    className="bg-gray-200 text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-300 transition-colors min-h-[44px] text-sm"
                   >
                     Cancelar
                   </button>
@@ -618,8 +618,8 @@ function QueueTab() {
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white truncate">{item.buyer_name}</p>
-                  <p className="text-sm text-gray-400 truncate">
+                  <p className="font-bold text-gray-800 truncate">{item.buyer_name}</p>
+                  <p className="text-sm text-gray-500 truncate">
                     {item.product_name} (x{item.quantity})
                   </p>
                 </div>
@@ -627,7 +627,7 @@ function QueueTab() {
                   <button
                     onClick={() => handleReorder(item.id, 'up')}
                     disabled={index === 0}
-                    className="bg-dark-surface text-gray-300 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-dark-lighter transition-colors disabled:opacity-30"
+                    className="bg-gray-100 text-gray-600 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-30"
                     title="Mover para cima"
                   >
                     ▲
@@ -635,29 +635,29 @@ function QueueTab() {
                   <button
                     onClick={() => handleReorder(item.id, 'down')}
                     disabled={index === queue.length - 1}
-                    className="bg-dark-surface text-gray-300 w-10 h-10 rounded-lg flex items-center justify-center hover:bg-dark-lighter transition-colors disabled:opacity-30"
+                    className="bg-gray-100 text-gray-600 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-30"
                     title="Mover para baixo"
                   >
                     ▼
                   </button>
                   <button
                     onClick={() => startEditQueue(item)}
-                    className="bg-blue-600/80 text-white w-10 h-10 rounded-lg flex items-center justify-center hover:bg-blue-500 transition-colors"
+                    className="bg-primary/10 text-primary w-10 h-10 rounded-xl flex items-center justify-center hover:bg-primary/20 transition-colors"
                     title="Editar"
                   >
                     ✎
                   </button>
                   <button
                     onClick={() => handleMarkOpened(item.id)}
-                    className="bg-green-600/80 text-white h-10 px-3 rounded-lg flex items-center justify-center hover:bg-green-500 transition-colors text-xs font-bold"
+                    className="bg-green-500 text-white h-10 px-3 rounded-xl flex items-center justify-center hover:bg-green-600 transition-colors text-xs font-bold"
                     title="Marcar como aberto"
                   >
                     Ja Aberto
                   </button>
                   <button
                     onClick={() => handleRemove(item.id)}
-                    className="bg-red-600/80 text-white w-10 h-10 rounded-lg flex items-center justify-center hover:bg-red-500 transition-colors"
-                    title="Remover sem registrar"
+                    className="bg-red-100 text-red-500 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-red-200 transition-colors"
+                    title="Remover"
                   >
                     ✕
                   </button>
@@ -677,12 +677,16 @@ interface HistoryItem {
   id: number;
   buyer_name: string;
   product_name: string;
+  product_image: string | null;
   quantity: number;
   opened_at: string;
 }
 
 function HistoryTab() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editBuyerName, setEditBuyerName] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
 
   const fetchHistory = useCallback(async () => {
     const res = await fetch('/api/history');
@@ -694,9 +698,50 @@ function HistoryTab() {
     fetchHistory();
   }, [fetchHistory]);
 
+  const startEdit = (item: HistoryItem) => {
+    setEditingId(item.id);
+    setEditBuyerName(item.buyer_name);
+    setEditQuantity(item.quantity.toString());
+  };
+
+  const handleEdit = async (id: number) => {
+    await fetch(`/api/history/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        buyer_name: editBuyerName,
+        quantity: parseInt(editQuantity),
+      }),
+    });
+    setEditingId(null);
+    fetchHistory();
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Excluir este item do historico?')) return;
+    await fetch(`/api/history/${id}`, { method: 'DELETE' });
+    fetchHistory();
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm('Tem certeza que deseja limpar todo o historico? Esta acao nao pode ser desfeita.')) return;
+    await fetch('/api/history', { method: 'DELETE' });
+    fetchHistory();
+  };
+
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-red-400">Ja Abertos</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-red-500">Ja Abertos</h3>
+        {history.length > 0 && (
+          <button
+            onClick={handleClearAll}
+            className="bg-red-100 text-red-500 text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-200 transition-colors"
+          >
+            Limpar Tudo
+          </button>
+        )}
+      </div>
 
       {history.length === 0 && (
         <p className="text-gray-400">Nenhuma abertura registrada.</p>
@@ -706,18 +751,77 @@ function HistoryTab() {
         {history.map((item) => (
           <div
             key={item.id}
-            className="bg-dark-card border border-red-500/30 rounded-xl p-4 flex items-center gap-3"
+            className="bg-white border border-red-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-3 shadow-sm"
           >
-            <div className="bg-red-500 text-white font-bold text-xs w-8 h-8 rounded-full flex items-center justify-center shrink-0">
-              x{item.quantity}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-white truncate">{item.buyer_name}</p>
-              <p className="text-sm text-gray-400 truncate">{item.product_name}</p>
-            </div>
-            <div className="text-xs text-gray-500 shrink-0">
-              {new Date(item.opened_at).toLocaleString('pt-BR')}
-            </div>
+            {item.product_image && (
+              <img
+                src={item.product_image}
+                alt={item.product_name}
+                className="w-12 h-16 rounded-xl object-contain bg-gray-50 shrink-0"
+              />
+            )}
+
+            {editingId === item.id ? (
+              <div className="flex-1 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={editBuyerName}
+                    onChange={(e) => setEditBuyerName(e.target.value)}
+                    placeholder="Nome do comprador"
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-red-500 focus:outline-none min-h-[44px]"
+                  />
+                  <input
+                    type="number"
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(e.target.value)}
+                    min={1}
+                    placeholder="Quantidade"
+                    className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-red-500 focus:outline-none min-h-[44px]"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(item.id)}
+                    className="bg-green-500 text-white font-bold px-4 py-2 rounded-xl hover:bg-green-600 transition-colors min-h-[44px] text-sm"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="bg-gray-200 text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-300 transition-colors min-h-[44px] text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 truncate">{item.buyer_name}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {item.product_name} (x{item.quantity})
+                  </p>
+                </div>
+                <div className="text-xs text-gray-400 shrink-0">
+                  {new Date(item.opened_at).toLocaleString('pt-BR')}
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => startEdit(item)}
+                    className="bg-primary/10 text-primary text-sm font-bold px-3 py-2 rounded-xl hover:bg-primary/20 transition-colors min-h-[44px]"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="bg-red-100 text-red-500 text-sm font-bold px-3 py-2 rounded-xl hover:bg-red-200 transition-colors min-h-[44px]"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>

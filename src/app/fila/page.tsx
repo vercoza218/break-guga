@@ -43,7 +43,6 @@ function QueueContent() {
   }, []);
 
   useEffect(() => {
-    // Try SSE first, fallback to polling
     const eventSource = new EventSource('/api/queue/stream');
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -84,7 +83,6 @@ function QueueContent() {
       newIds.add(item.id);
     }
   });
-  // Update seen IDs after render
   useEffect(() => {
     queue.forEach((item) => seenIds.current.add(item.id));
   }, [queue]);
@@ -92,18 +90,22 @@ function QueueContent() {
   return (
     <div className={fullscreen ? 'p-4' : ''}>
       {!fullscreen && (
-        <h2 className="text-xl md:text-2xl font-bold text-green-400 mb-6">
-          Fila de Abertura
-        </h2>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+            Fila do Break
+          </h2>
+          <p className="text-gray-500">Ordem de abertura dos boosters</p>
+        </div>
       )}
 
       {queue.length === 0 && !fullscreen && (
-        <p className="text-gray-400 text-center py-12">
-          Nenhum item na fila de abertura.
-        </p>
+        <div className="text-center py-16">
+          <div className="text-6xl mb-4">📋</div>
+          <p className="text-gray-400">Nenhum participante na fila ainda</p>
+        </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {queue.map((item, index) => {
           const isFirst = item.position === 1;
           const isNew = newIds.has(item.id);
@@ -111,25 +113,25 @@ function QueueContent() {
           return (
             <div
               key={item.id}
-              className={`bg-dark-card rounded-xl overflow-hidden relative ${
+              className={`bg-white rounded-2xl overflow-hidden relative shadow-sm ${
                 isFirst
                   ? 'animate-gold-pulse border-2 border-green-500'
-                  : 'border border-green-500/30'
+                  : 'border-2 border-green-200'
               } ${isNew ? 'animate-fade-slide-in' : ''}`}
               style={isNew ? { animationDelay: `${index * 80}ms` } : undefined}
             >
               {/* Position badge */}
-              <div className="absolute top-2 left-2 z-10 bg-green-500 text-black font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+              <div className="absolute top-2 left-2 z-10 bg-green-500 text-white font-bold text-sm w-8 h-8 rounded-full flex items-center justify-center shadow-md">
                 {item.position}
               </div>
 
               {/* Quantity badge */}
-              <div className="absolute top-2 right-2 z-10 bg-dark/80 backdrop-blur text-green-400 font-bold text-sm px-2 py-1 rounded-lg border border-green-500/30">
+              <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur text-green-600 font-bold text-sm px-2 py-1 rounded-lg border border-green-200 shadow-sm">
                 x{item.quantity}
               </div>
 
               {/* Product image */}
-              <div className="aspect-[9/14] bg-dark-surface flex items-center justify-center overflow-hidden">
+              <div className="aspect-[9/14] bg-gray-50 flex items-center justify-center overflow-hidden">
                 {item.product_image ? (
                   <img
                     src={item.product_image}
@@ -143,7 +145,7 @@ function QueueContent() {
 
               {/* Info */}
               <div className="p-3 text-center">
-                <p className="font-bold text-white text-sm md:text-base truncate">
+                <p className="font-bold text-gray-800 text-sm md:text-base truncate">
                   {item.buyer_name}
                 </p>
                 <p className="text-xs text-gray-400 truncate">
@@ -158,23 +160,26 @@ function QueueContent() {
       {/* History section */}
       {!fullscreen && history.length > 0 && (
         <>
-          <h2 className="text-xl md:text-2xl font-bold text-red-400 mb-6 mt-10">
-            Ja Abertos
-          </h2>
+          <div className="text-center mb-6 mt-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+              Ja Abertos
+            </h2>
+            <p className="text-gray-500">Boosters que ja foram abertos</p>
+          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {history.map((item) => (
               <div
                 key={item.id}
-                className="bg-dark-card border border-red-500/30 rounded-xl overflow-hidden relative"
+                className="bg-white border-2 border-red-200 rounded-2xl overflow-hidden relative shadow-sm"
               >
                 {/* Quantity badge */}
-                <div className="absolute top-2 right-2 z-10 bg-dark/80 backdrop-blur text-red-400 font-bold text-sm px-2 py-1 rounded-lg border border-red-500/30">
+                <div className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur text-red-500 font-bold text-sm px-2 py-1 rounded-lg border border-red-200 shadow-sm">
                   x{item.quantity}
                 </div>
 
                 {/* Product image */}
-                <div className="aspect-[9/14] bg-dark-surface flex items-center justify-center overflow-hidden">
+                <div className="aspect-[9/14] bg-gray-50 flex items-center justify-center overflow-hidden">
                   {item.product_image ? (
                     <img
                       src={item.product_image}
@@ -188,7 +193,7 @@ function QueueContent() {
 
                 {/* Info */}
                 <div className="p-3 text-center">
-                  <p className="font-bold text-white text-sm md:text-base truncate">
+                  <p className="font-bold text-gray-800 text-sm md:text-base truncate">
                     {item.buyer_name}
                   </p>
                   <p className="text-xs text-gray-400 truncate">
