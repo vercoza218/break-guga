@@ -22,7 +22,7 @@ export default function StorePage() {
 
   useEffect(() => {
     fetchProducts();
-    const interval = setInterval(fetchProducts, 15000);
+    const interval = setInterval(fetchProducts, 5000);
     return () => clearInterval(interval);
   }, [fetchProducts]);
 

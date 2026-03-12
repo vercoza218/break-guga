@@ -23,7 +23,7 @@ export default function QueuePage() {
 
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(fetchQueue, 15000);
+    const interval = setInterval(fetchQueue, 5000);
     return () => clearInterval(interval);
   }, [fetchQueue]);
 
