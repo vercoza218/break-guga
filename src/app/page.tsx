@@ -152,7 +152,12 @@ export default function StorePage() {
                           </span>
                         </div>
 
-                        <PaymentBlock onCopyPix={copyPix} />
+                        <PaymentBlock
+                          onCopyPix={copyPix}
+                          productName={product.name}
+                          quantity={qty}
+                          total={total}
+                        />
                       </div>
                     )}
                   </>
@@ -166,7 +171,20 @@ export default function StorePage() {
   );
 }
 
-function PaymentBlock({ onCopyPix }: { onCopyPix: () => void }) {
+function PaymentBlock({
+  onCopyPix,
+  productName,
+  quantity,
+  total,
+}: {
+  onCopyPix: () => void;
+  productName: string;
+  quantity: number;
+  total: number;
+}) {
+  const whatsappMessage = `Ola! Gostaria de participar do break.\n\nProduto: ${productName}\nQuantidade: ${quantity}\nTotal: R$ ${total.toFixed(2).replace('.', ',')}\n\nSegue o comprovante de pagamento:`;
+  const whatsappUrl = `https://wa.me/5581997492084?text=${encodeURIComponent(whatsappMessage)}`;
+
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
       <h4 className="text-primary font-semibold text-sm">Pagamento</h4>
@@ -186,7 +204,7 @@ function PaymentBlock({ onCopyPix }: { onCopyPix: () => void }) {
         </div>
 
         <a
-          href="https://wa.me/5581997492084"
+          href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors min-h-[44px] text-sm"
