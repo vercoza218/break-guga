@@ -52,7 +52,7 @@ export default function StorePage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {products.map((product) => {
+        {[...products].sort((a, b) => (a.coming_soon ? 1 : 0) - (b.coming_soon ? 1 : 0)).map((product) => {
           const qty = quantities[product.id] || 0;
           const total = qty * product.price;
           const soldOut = product.stock <= 0;
