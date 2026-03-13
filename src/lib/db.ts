@@ -49,9 +49,15 @@ function initDb(db: Database.Database) {
   `);
 
   // Migration: add product_image column if missing (for existing databases)
-  const cols = db.prepare("PRAGMA table_info(history)").all() as { name: string }[];
-  if (!cols.some(c => c.name === 'product_image')) {
+  const histCols = db.prepare("PRAGMA table_info(history)").all() as { name: string }[];
+  if (!histCols.some(c => c.name === 'product_image')) {
     db.exec("ALTER TABLE history ADD COLUMN product_image TEXT");
+  }
+
+  // Migration: add coming_soon column if missing
+  const prodCols = db.prepare("PRAGMA table_info(products)").all() as { name: string }[];
+  if (!prodCols.some(c => c.name === 'coming_soon')) {
+    db.exec("ALTER TABLE products ADD COLUMN coming_soon INTEGER NOT NULL DEFAULT 0");
   }
 }
 

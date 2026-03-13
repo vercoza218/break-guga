@@ -11,6 +11,7 @@ interface Product {
   stock: number;
   price: number;
   image: string | null;
+  coming_soon: number;
 }
 
 interface QueueItem {
@@ -258,6 +259,15 @@ function ProductsTab() {
     fetchProducts();
   };
 
+  const handleToggleComingSoon = async (product: Product) => {
+    await fetch(`/api/products/${product.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coming_soon: !product.coming_soon }),
+    });
+    fetchProducts();
+  };
+
   const startEdit = (product: Product) => {
     setEditingId(product.id);
     setEditName(product.name);
@@ -400,12 +410,29 @@ function ProductsTab() {
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-800">{product.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-gray-800">{product.name}</p>
+                    {product.coming_soon ? (
+                      <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                        Em Breve
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="text-sm text-gray-500">
                     Estoque: {product.stock} | R$ {product.price.toFixed(2)}
                   </p>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0 flex-wrap">
+                  <button
+                    onClick={() => handleToggleComingSoon(product)}
+                    className={`text-sm font-bold px-4 py-2 rounded-xl transition-colors min-h-[44px] ${
+                      product.coming_soon
+                        ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {product.coming_soon ? 'Desativar Em Breve' : 'Em Breve'}
+                  </button>
                   <button
                     onClick={() => startEdit(product)}
                     className="bg-primary text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-primary-dark transition-colors min-h-[44px]"

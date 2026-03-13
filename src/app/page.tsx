@@ -8,6 +8,7 @@ interface Product {
   stock: number;
   price: number;
   image: string | null;
+  coming_soon: number;
 }
 
 export default function StorePage() {
@@ -55,19 +56,21 @@ export default function StorePage() {
           const qty = quantities[product.id] || 0;
           const total = qty * product.price;
           const soldOut = product.stock <= 0;
+          const comingSoon = !!product.coming_soon;
+          const unavailable = soldOut || comingSoon;
 
           return (
             <div
               key={product.id}
               className={`bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden shadow-sm hover:shadow-md ${
-                soldOut
+                unavailable
                   ? 'border-gray-200 opacity-70'
                   : 'border-gray-200 hover:border-primary/30'
               }`}
             >
               <div className="p-4 flex gap-4">
                 {/* Product image */}
-                <div className="w-24 h-32 bg-gray-50 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+                <div className={`w-24 h-32 rounded-xl overflow-hidden shrink-0 flex items-center justify-center ${comingSoon ? 'bg-gray-100 grayscale' : 'bg-gray-50'}`}>
                   {product.image ? (
                     <img
                       src={product.image}
@@ -81,13 +84,17 @@ export default function StorePage() {
 
                 {/* Product info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-base text-gray-800 mb-1 truncate">
+                  <h3 className={`font-bold text-base mb-1 truncate ${comingSoon ? 'text-gray-400' : 'text-gray-800'}`}>
                     {product.name}
                   </h3>
-                  <p className="text-green-600 font-bold text-xl mb-2">
+                  <p className={`font-bold text-xl mb-2 ${comingSoon ? 'text-gray-400' : 'text-green-600'}`}>
                     R$ {product.price.toFixed(2).replace('.', ',')}
                   </p>
-                  {soldOut ? (
+                  {comingSoon ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
+                      Em Breve
+                    </span>
+                  ) : soldOut ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500 bg-red-50 border border-red-200 rounded-full px-3 py-1">
                       Esgotado
                     </span>
@@ -101,7 +108,14 @@ export default function StorePage() {
 
               {/* Action area */}
               <div className="px-4 pb-4">
-                {soldOut ? (
+                {comingSoon ? (
+                  <button
+                    disabled
+                    className="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-xl cursor-not-allowed text-sm"
+                  >
+                    EM BREVE
+                  </button>
+                ) : soldOut ? (
                   <button
                     disabled
                     className="w-full bg-gray-300 text-gray-500 font-bold py-3 rounded-xl cursor-not-allowed text-sm"
