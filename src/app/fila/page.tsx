@@ -23,9 +23,22 @@ interface HistoryItem {
   opened_at: string;
 }
 
+function QueueSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border-2 border-green-200 overflow-hidden animate-pulse">
+      <div className="aspect-[9/14] bg-gray-200" />
+      <div className="p-3 space-y-2">
+        <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto" />
+        <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto" />
+      </div>
+    </div>
+  );
+}
+
 function QueueContent() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const seenIds = useRef<Set<number>>(new Set());
   const searchParams = useSearchParams();
   const fullscreen = searchParams.get('fullscreen') === 'true';
@@ -50,6 +63,7 @@ function QueueContent() {
       try {
         const data = JSON.parse(event.data);
         setQueue(data);
+        setLoading(false);
         fetchHistory();
       } catch {
         // ignore parse errors
@@ -58,7 +72,7 @@ function QueueContent() {
 
     eventSource.onerror = () => {
       eventSource.close();
-      fetchQueue();
+      fetchQueue().then(() => setLoading(false));
       fetchHistory();
       fallbackInterval = setInterval(() => { fetchQueue(); fetchHistory(); }, 5000);
     };
@@ -98,7 +112,13 @@ function QueueContent() {
         </div>
       )}
 
-      {queue.length === 0 && !fullscreen && (
+      {loading && !fullscreen && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <QueueSkeleton key={i} />)}
+        </div>
+      )}
+
+      {!loading && queue.length === 0 && !fullscreen && (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📋</div>
           <p className="text-gray-400">Nenhum participante na fila ainda</p>

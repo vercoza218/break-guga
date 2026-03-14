@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import PWARegister from "@/components/PWARegister";
+import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "Gugaopkmn - Break ao Vivo",
@@ -33,10 +34,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="antialiased min-h-screen">
-        <Suspense>
-          <AppShell>{children}</AppShell>
-        </Suspense>
-        <PWARegister />
+        <ToastProvider>
+          <Suspense>
+            <AppShell>{children}</AppShell>
+          </Suspense>
+          <PWARegister />
+        </ToastProvider>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, FormEvent, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { useToast } from '@/components/Toast';
 
 const ImageCropper = dynamic(() => import('@/components/ImageCropper'), { ssr: false });
 
@@ -173,6 +174,7 @@ function ProductsTab() {
   const [editPrice, setEditPrice] = useState('');
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
     const res = await fetch('/api/products');
@@ -237,6 +239,7 @@ function ProductsTab() {
     if (fileInputRef.current) fileInputRef.current.value = '';
     setLoading(false);
     fetchProducts();
+    toast('Produto criado com sucesso!');
   };
 
   const handleEdit = async (id: number) => {
@@ -251,12 +254,14 @@ function ProductsTab() {
     });
     setEditingId(null);
     fetchProducts();
+    toast('Produto atualizado!');
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
     await fetch(`/api/products/${id}`, { method: 'DELETE' });
     fetchProducts();
+    toast('Produto excluido!', 'info');
   };
 
   const handleToggleComingSoon = async (product: Product) => {
@@ -266,6 +271,7 @@ function ProductsTab() {
       body: JSON.stringify({ coming_soon: !product.coming_soon }),
     });
     fetchProducts();
+    toast(product.coming_soon ? 'Produto ativado!' : 'Produto marcado como Em Breve');
   };
 
   const startEdit = (product: Product) => {
@@ -466,6 +472,7 @@ function QueueTab() {
   const [editingQueueId, setEditingQueueId] = useState<number | null>(null);
   const [editBuyerName, setEditBuyerName] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
+  const { toast } = useToast();
 
   const fetchQueue = useCallback(async () => {
     const res = await fetch('/api/queue');
@@ -500,6 +507,7 @@ function QueueTab() {
     setQuantity('1');
     fetchQueue();
     fetchProducts();
+    toast('Adicionado a fila!');
   };
 
   const handleRemove = async (id: number) => {
@@ -507,12 +515,14 @@ function QueueTab() {
     await fetch(`/api/queue/${id}`, { method: 'DELETE' });
     fetchQueue();
     fetchProducts();
+    toast('Removido da fila', 'info');
   };
 
   const handleMarkOpened = async (id: number) => {
     await fetch(`/api/queue/${id}`, { method: 'DELETE' });
     fetchQueue();
     fetchProducts();
+    toast('Marcado como aberto!');
   };
 
   const handleReorder = async (id: number, direction: 'up' | 'down') => {
@@ -542,6 +552,7 @@ function QueueTab() {
     setEditingQueueId(null);
     fetchQueue();
     fetchProducts();
+    toast('Item atualizado!');
   };
 
   return (
@@ -714,6 +725,7 @@ function HistoryTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editBuyerName, setEditBuyerName] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
+  const { toast } = useToast();
 
   const fetchHistory = useCallback(async () => {
     const res = await fetch('/api/history');
@@ -742,18 +754,21 @@ function HistoryTab() {
     });
     setEditingId(null);
     fetchHistory();
+    toast('Historico atualizado!');
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Excluir este item do historico?')) return;
     await fetch(`/api/history/${id}`, { method: 'DELETE' });
     fetchHistory();
+    toast('Item excluido', 'info');
   };
 
   const handleClearAll = async () => {
     if (!confirm('Tem certeza que deseja limpar todo o historico? Esta acao nao pode ser desfeita.')) return;
     await fetch('/api/history', { method: 'DELETE' });
     fetchHistory();
+    toast('Historico limpo!', 'info');
   };
 
   return (

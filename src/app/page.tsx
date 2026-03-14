@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '@/components/Toast';
 
 interface Product {
   id: number;
@@ -11,14 +12,35 @@ interface Product {
   coming_soon: number;
 }
 
+function ProductSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden shadow-sm animate-pulse">
+      <div className="p-4 flex gap-4">
+        <div className="w-24 h-32 rounded-xl bg-gray-200 shrink-0" />
+        <div className="flex-1 space-y-3 py-2">
+          <div className="h-4 bg-gray-200 rounded w-3/4" />
+          <div className="h-6 bg-gray-200 rounded w-1/2" />
+          <div className="h-5 bg-gray-200 rounded-full w-24" />
+        </div>
+      </div>
+      <div className="px-4 pb-4">
+        <div className="h-12 bg-gray-200 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export default function StorePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
     const res = await fetch('/api/products');
     const data = await res.json();
     setProducts(data);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -32,8 +54,12 @@ export default function StorePage() {
   };
 
   const copyPix = async () => {
-    await navigator.clipboard.writeText('5a71a958-9f8a-4887-b0ae-3bf96f67a04d');
-    alert('Chave PIX copiada!');
+    try {
+      await navigator.clipboard.writeText('5a71a958-9f8a-4887-b0ae-3bf96f67a04d');
+      toast('Chave PIX copiada!');
+    } catch {
+      toast('Chave PIX: 5a71a958-9f8a-4887-b0ae-3bf96f67a04d', 'info');
+    }
   };
 
   return (
@@ -47,13 +73,19 @@ export default function StorePage() {
         <p className="text-gray-500">Escolha seus boosters e participe do break!</p>
       </div>
 
-      {products.length === 0 && (
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3].map((i) => <ProductSkeleton key={i} />)}
+        </div>
+      )}
+
+      {!loading && products.length === 0 && (
         <p className="text-gray-400 text-center py-12">
           Nenhum produto cadastrado ainda.
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start ${loading ? 'hidden' : ''}`}>
         {[...products].sort((a, b) => (a.coming_soon ? 1 : 0) - (b.coming_soon ? 1 : 0)).map((product) => {
           const qty = quantities[product.id] || 0;
           const total = qty * product.price;
