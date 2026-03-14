@@ -1,21 +1,25 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const fullscreen = searchParams.get('fullscreen') === 'true';
 
   if (fullscreen) {
     return <main className="min-h-screen">{children}</main>;
   }
 
+  const isVitrine = pathname === '/';
+  const isFila = pathname === '/fila';
+
   return (
     <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <span className="text-2xl">⚡</span>
+            <img src="/logo.png" alt="Gugaopkmn" className="w-9 h-9 rounded-full object-cover" />
             <h1 className="text-lg md:text-xl font-bold text-primary">
               Gugaopkmn
             </h1>
@@ -24,14 +28,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </a>
           <nav className="flex items-center gap-4 text-sm">
-            <a href="/" className="text-gray-600 hover:text-primary transition-colors font-medium">
+            <a
+              href="/"
+              className={`transition-colors font-medium ${isVitrine ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+            >
               Vitrine
             </a>
-            <a href="/fila" className="text-gray-600 hover:text-primary transition-colors font-medium">
+            <a
+              href="/fila"
+              className={`transition-colors font-medium ${isFila ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+            >
               Fila
-            </a>
-            <a href="/admin" className="text-gray-400 hover:text-primary transition-colors text-xs">
-              Admin
             </a>
           </nav>
         </div>

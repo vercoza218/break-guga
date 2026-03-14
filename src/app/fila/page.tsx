@@ -205,6 +205,19 @@ function QueueContent() {
           </div>
         </>
       )}
+      {/* Banner to navigate to Vitrine */}
+      {!fullscreen && (
+        <div className="mt-10 mb-4">
+          <a
+            href="/"
+            className="block bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl p-6 text-center text-white hover:from-green-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg group"
+          >
+            <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🛒</div>
+            <h3 className="text-lg font-bold mb-1">Nao fique de fora!</h3>
+            <p className="text-green-100 text-sm">Compre os nossos boosters e participe do break ao vivo</p>
+          </a>
+        </div>
+      )}
     </div>
   );
 }

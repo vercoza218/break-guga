@@ -38,7 +38,9 @@ export default function StorePage() {
 
   return (
     <div>
+      {/* Header with logo */}
       <div className="text-center mb-8">
+        <img src="/logo.png" alt="Gugaopkmn" className="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg" />
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
           Boosters Disponiveis
         </h2>
@@ -58,16 +60,26 @@ export default function StorePage() {
           const soldOut = product.stock <= 0;
           const comingSoon = !!product.coming_soon;
           const unavailable = soldOut || comingSoon;
+          const lowStock = !comingSoon && !soldOut && product.stock > 0 && product.stock < 20;
 
           return (
             <div
               key={product.id}
-              className={`bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden shadow-sm hover:shadow-md ${
-                unavailable
-                  ? 'border-gray-200 opacity-70'
-                  : 'border-gray-200 hover:border-primary/30'
+              className={`bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden shadow-sm hover:shadow-md relative ${
+                lowStock
+                  ? 'border-red-300 hover:border-red-400'
+                  : unavailable
+                    ? 'border-gray-200 opacity-70'
+                    : 'border-gray-200 hover:border-primary/30'
               }`}
             >
+              {/* Low stock urgency banner */}
+              {lowStock && (
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-1.5 px-3 text-xs font-bold tracking-wider animate-urgency-pulse">
+                  ULTIMAS UNIDADES — Restam apenas {product.stock}!
+                </div>
+              )}
+
               <div className="p-4 flex gap-4">
                 {/* Product image */}
                 <div className={`w-24 h-32 rounded-xl overflow-hidden shrink-0 flex items-center justify-center ${comingSoon ? 'bg-gray-100 grayscale' : 'bg-gray-50'}`}>
@@ -98,6 +110,10 @@ export default function StorePage() {
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500 bg-red-50 border border-red-200 rounded-full px-3 py-1">
                       Esgotado
                     </span>
+                  ) : lowStock ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 border border-red-300 rounded-full px-3 py-1 animate-urgency-badge">
+                      🔥 {product.stock} restantes
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-full px-3 py-1">
                       {product.stock} disponiveis
@@ -127,9 +143,13 @@ export default function StorePage() {
                     {qty === 0 ? (
                       <button
                         onClick={() => setQty(product.id, 1)}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition-colors text-sm"
+                        className={`w-full font-bold py-3 rounded-xl transition-colors text-sm text-white ${
+                          lowStock
+                            ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
+                            : 'bg-green-500 hover:bg-green-600'
+                        }`}
                       >
-                        QUERO
+                        {lowStock ? 'GARANTIR O MEU' : 'QUERO'}
                       </button>
                     ) : (
                       <div className="space-y-3">
@@ -180,6 +200,18 @@ export default function StorePage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Banner to navigate to Fila */}
+      <div className="mt-10 mb-4">
+        <a
+          href="/fila"
+          className="block bg-gradient-to-r from-primary to-blue-500 rounded-2xl p-6 text-center text-white hover:from-primary-dark hover:to-blue-600 transition-all shadow-md hover:shadow-lg group"
+        >
+          <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📋</div>
+          <h3 className="text-lg font-bold mb-1">Acompanhe a ordem de abertura</h3>
+          <p className="text-blue-100 text-sm">Veja quem esta na fila e a ordem dos boosters ao vivo</p>
+        </a>
       </div>
     </div>
   );
