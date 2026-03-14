@@ -32,7 +32,7 @@ export default function StorePage() {
   };
 
   const copyPix = async () => {
-    await navigator.clipboard.writeText('abracarteiratcg@gmail.com');
+    await navigator.clipboard.writeText('5a71a958-9f8a-4887-b0ae-3bf96f67a04d');
     alert('Chave PIX copiada!');
   };
 
@@ -228,18 +228,40 @@ function PaymentBlock({
   quantity: number;
   total: number;
 }) {
+  const [showQR, setShowQR] = useState(false);
   const whatsappMessage = `Ola! Gostaria de participar do break.\n\nProduto: ${productName}\nQuantidade: ${quantity}\nTotal: R$ ${total.toFixed(2).replace('.', ',')}\n\nSegue o comprovante de pagamento:`;
   const whatsappUrl = `https://wa.me/5581997492084?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
-      <h4 className="text-primary font-semibold text-sm">Pagamento</h4>
+      <h4 className="text-primary font-semibold text-sm">Pagamento via PIX</h4>
+
+      {/* QR Code toggle */}
+      <button
+        onClick={() => setShowQR(!showQR)}
+        className="w-full bg-white border-2 border-primary/20 hover:border-primary/40 rounded-xl py-3 px-4 transition-all text-sm font-medium text-primary flex items-center justify-center gap-2"
+      >
+        {showQR ? 'Ocultar QR Code' : 'Pagar com QR Code PIX'}
+      </button>
+
+      {showQR && (
+        <div className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-200">
+          <img
+            src="/pix-qr.png"
+            alt="QR Code PIX"
+            className="w-48 h-48 object-contain"
+          />
+          <p className="text-xs text-gray-500 text-center">
+            Escaneie o QR Code com o app do seu banco
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 shrink-0">PIX:</span>
-          <span className="text-xs text-gray-700 truncate flex-1">
-            abracarteiratcg@gmail.com
+          <span className="text-xs text-gray-500 shrink-0">Chave PIX:</span>
+          <span className="text-xs text-gray-700 truncate flex-1 font-mono">
+            5a71a958-9f8a-...67a04d
           </span>
           <button
             onClick={onCopyPix}
