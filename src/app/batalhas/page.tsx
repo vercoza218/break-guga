@@ -43,7 +43,7 @@ export default function BatalhasPage() {
   const [loading, setLoading] = useState(true);
   const [showRules, setShowRules] = useState(false);
   const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
-  const [justActed, setJustActed] = useState<number | null>(null);
+  const [justActedBattle, setJustActedBattle] = useState<{ battleId: number; playerName: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
@@ -94,18 +94,19 @@ export default function BatalhasPage() {
 
   const handleJoin = async (battleId: number) => {
     if (!joinName.trim()) return;
+    const playerName = joinName.trim();
     await fetch(`/api/battles/${battleId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'join', player_name: joinName, avatar: joinAvatar }),
+      body: JSON.stringify({ action: 'join', player_name: playerName, avatar: joinAvatar }),
     });
-    setJoinName('');
-    setJoinAvatar(null);
     setJoiningBattleId(null);
     if (joinFileRef.current) joinFileRef.current.value = '';
     fetchBattles();
     toast('Voce entrou na batalha! Envie o comprovante.');
-    setJustActed(Date.now());
+    setJustActedBattle({ battleId, playerName });
+    setJoinName('');
+    setJoinAvatar(null);
   };
 
   const openBattles = battles.filter((b) => b.status === 'open');
@@ -119,6 +120,23 @@ export default function BatalhasPage() {
     } catch {
       toast('Chave PIX: 5a71a958-9f8a-4887-b0ae-3bf96f67a04d', 'info');
     }
+  };
+
+  // Build WhatsApp message with battle details
+  const getWhatsappUrl = () => {
+    if (!justActedBattle) return '#';
+    const b = battles.find(bt => bt.id === justActedBattle.battleId);
+    if (!b) {
+      return `https://wa.me/5581997492084?text=${encodeURIComponent('Ola! Segue o comprovante de pagamento da batalha de booster:')}`;
+    }
+    const total = b.boosters_per_player * b.product_price;
+    const msg = `Ola! Segue o comprovante de pagamento:\n\n` +
+      `Batalha: ${b.title || b.product_name}\n` +
+      `Produto: ${b.product_name}\n` +
+      `Boosters: ${b.boosters_per_player}\n` +
+      `Valor: R$ ${total.toFixed(2).replace('.', ',')}\n` +
+      `Jogador: ${justActedBattle.playerName}`;
+    return `https://wa.me/5581997492084?text=${encodeURIComponent(msg)}`;
   };
 
   return (
@@ -151,7 +169,7 @@ export default function BatalhasPage() {
       )}
 
       {/* Payment block shown after joining */}
-      {justActed && (
+      {justActedBattle && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-8 space-y-3 animate-fade-slide-in">
           <h4 className="text-primary font-bold">Pagamento via PIX</h4>
           <p className="text-sm text-gray-600">Envie o pagamento e depois mande o comprovante pelo WhatsApp. O admin vai confirmar e sua vaga sera garantida!</p>
@@ -161,24 +179,14 @@ export default function BatalhasPage() {
             <button onClick={copyPix} className="bg-primary text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-primary-dark transition-colors min-h-[44px] shrink-0 btn-press">Copiar</button>
           </div>
           <a
-            href={`https://wa.me/5581997492084?text=${encodeURIComponent((() => {
-              const b = battles.find(bt => bt.id === justActed);
-              if (!b) return 'Ola! Segue o comprovante de pagamento da batalha de booster:';
-              const total = b.boosters_per_player * b.product_price;
-              return `Ola! Segue o comprovante de pagamento:\n\n` +
-                `Batalha: ${b.title || b.product_name}\n` +
-                `Produto: ${b.product_name}\n` +
-                `Boosters: ${b.boosters_per_player}\n` +
-                `Valor: R$ ${total.toFixed(2)}\n` +
-                `Jogador: ${joinName}`;
-            })())}`}
+            href={getWhatsappUrl()}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors min-h-[44px] text-sm btn-press"
           >
             Enviar comprovante via WhatsApp
           </a>
-          <button onClick={() => setJustActed(null)} className="w-full text-gray-400 text-xs hover:text-gray-600 py-1">Fechar</button>
+          <button onClick={() => setJustActedBattle(null)} className="w-full text-gray-400 text-xs hover:text-gray-600 py-1">Fechar</button>
         </div>
       )}
 
@@ -248,38 +256,71 @@ export default function BatalhasPage() {
             <span>🏅</span> Ranking de Batalhas
           </h3>
           <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-4 md:p-6 space-y-3">
-            <div className="bg-amber-100 border border-amber-300 rounded-xl p-4 text-sm text-amber-700 space-y-2">
-              <p className="text-center font-semibold">O ranking reseta todo mes. Os melhores sao premiados!</p>
-              <div className="flex flex-col items-center gap-1 text-amber-800">
-                <span>🥇 <strong>Top 1:</strong> R$ 150,00 em creditos na loja</span>
-                <span>🥈 <strong>Top 2:</strong> R$ 100,00 em creditos na loja</span>
-                <span>🥉 <strong>Top 3:</strong> R$ 50,00 em creditos na loja</span>
+            {/* Rewards banner */}
+            <div className="bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-300 rounded-xl p-4 text-sm space-y-3">
+              <p className="text-center font-bold text-amber-800">🎁 Premiacoes Mensais</p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-yellow-400/20 border border-yellow-400 rounded-xl p-3">
+                  <div className="text-2xl mb-1">🥇</div>
+                  <p className="font-bold text-yellow-700 text-base">R$ 150</p>
+                  <p className="text-[10px] text-yellow-600 mt-0.5">em creditos</p>
+                </div>
+                <div className="bg-gray-300/20 border border-gray-400 rounded-xl p-3">
+                  <div className="text-2xl mb-1">🥈</div>
+                  <p className="font-bold text-gray-600 text-base">R$ 100</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">em creditos</p>
+                </div>
+                <div className="bg-orange-300/20 border border-orange-400 rounded-xl p-3">
+                  <div className="text-2xl mb-1">🥉</div>
+                  <p className="font-bold text-orange-700 text-base">R$ 50</p>
+                  <p className="text-[10px] text-orange-600 mt-0.5">em creditos</p>
+                </div>
               </div>
+              <p className="text-center text-xs text-amber-600">Creditos em produtos na loja • Ranking reseta todo mes</p>
             </div>
+
             {ranking.length > 0 ? (
               <div className="space-y-2">
                 {ranking.map((player, i) => (
-                  <div key={player.player_name} className={`flex items-center gap-3 p-3 rounded-xl border ${
-                    i === 0 ? 'bg-yellow-50 border-yellow-300' : i === 1 ? 'bg-gray-50 border-gray-300' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-200'
+                  <div key={player.player_name} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                    i === 0 ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-400 shadow-sm' :
+                    i === 1 ? 'bg-gradient-to-r from-gray-50 to-slate-100 border-gray-400 shadow-sm' :
+                    i === 2 ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-400 shadow-sm' :
+                    'bg-white border-gray-200'
                   }`}>
                     {/* Position */}
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                      i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-500'
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                      i === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-md' :
+                      i === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-md' :
+                      i === 2 ? 'bg-gradient-to-br from-orange-400 to-amber-600 text-white shadow-md' :
+                      'bg-gray-200 text-gray-500'
                     }`}>
-                      {i + 1}
+                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                     </div>
                     {/* Avatar */}
                     {player.avatar ? (
-                      <img src={player.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm shrink-0" />
+                      <img src={player.avatar} alt="" className={`w-11 h-11 rounded-full object-cover shrink-0 ${
+                        i === 0 ? 'border-2 border-yellow-400 shadow-md' :
+                        i === 1 ? 'border-2 border-gray-400 shadow-md' :
+                        i === 2 ? 'border-2 border-orange-400 shadow-md' :
+                        'border-2 border-white shadow-sm'
+                      }`} />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-bold text-sm shrink-0">
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                        i === 0 ? 'bg-yellow-200 text-yellow-700 border-2 border-yellow-400' :
+                        i === 1 ? 'bg-gray-200 text-gray-600 border-2 border-gray-400' :
+                        i === 2 ? 'bg-orange-200 text-orange-700 border-2 border-orange-400' :
+                        'bg-orange-200 text-orange-600'
+                      }`}>
                         {player.player_name.charAt(0).toUpperCase()}
                       </div>
                     )}
                     {/* Name + stats */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-800 text-sm truncate flex items-center gap-1">
-                        {i === 0 && '🥇'}{i === 1 && '🥈'}{i === 2 && '🥉'} {player.player_name}
+                      <p className={`font-bold text-sm truncate ${
+                        i === 0 ? 'text-yellow-800' : i === 1 ? 'text-gray-700' : i === 2 ? 'text-orange-800' : 'text-gray-800'
+                      }`}>
+                        {player.player_name}
                       </p>
                       <p className="text-xs text-gray-500">
                         {player.total} batalha{player.total !== 1 ? 's' : ''} | {player.wins}V {player.losses}D
@@ -287,7 +328,11 @@ export default function BatalhasPage() {
                     </div>
                     {/* Win rate */}
                     <div className="text-right shrink-0">
-                      <p className={`font-bold text-sm ${player.win_rate >= 50 ? 'text-green-600' : 'text-gray-500'}`}>
+                      <p className={`font-bold text-sm ${
+                        player.win_rate >= 70 ? 'text-green-600' :
+                        player.win_rate >= 50 ? 'text-blue-600' :
+                        'text-gray-500'
+                      }`}>
                         {player.win_rate}%
                       </p>
                       <p className="text-[10px] text-gray-400 uppercase">win rate</p>
@@ -306,10 +351,20 @@ export default function BatalhasPage() {
 
       {/* Empty state */}
       {!loading && battles.length === 0 && (
-        <div className="text-center py-16">
+        <div className="text-center py-12">
           <div className="text-6xl mb-4">⚔️</div>
-          <p className="text-gray-400 mb-2">Nenhuma batalha ainda.</p>
-          <p className="text-gray-400 text-sm">Em breve novas batalhas serao criadas!</p>
+          <p className="text-gray-500 font-medium mb-2">Nenhuma batalha no momento</p>
+          <p className="text-gray-400 text-sm mb-6">Fique ligado nas nossas redes — novas batalhas sao anunciadas nas lives!</p>
+          <div className="flex justify-center gap-3">
+            <a href="https://www.instagram.com/gugaopkmn/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity btn-press">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.054 1.97.24 2.43.403a4.088 4.088 0 011.47.957c.453.453.78.898.957 1.47.163.46.35 1.26.404 2.43.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.054 1.17-.24 1.97-.404 2.43a4.088 4.088 0 01-.957 1.47 4.088 4.088 0 01-1.47.957c-.46.163-1.26.35-2.43.404-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.054-1.97-.24-2.43-.404a4.088 4.088 0 01-1.47-.957 4.088 4.088 0 01-.957-1.47c-.163-.46-.35-1.26-.404-2.43C2.175 15.584 2.163 15.204 2.163 12s.012-3.584.07-4.85c.054-1.17.24-1.97.404-2.43a4.088 4.088 0 01.957-1.47A4.088 4.088 0 015.064 2.293c.46-.163 1.26-.35 2.43-.404C8.416 1.831 8.796 1.819 12 1.819M12 0C8.741 0 8.333.014 7.053.072 5.775.13 4.903.333 4.14.63a6.21 6.21 0 00-2.246 1.463A6.21 6.21 0 00.43 4.34C.133 5.103-.07 5.975.072 7.253.014 8.533 0 8.941 0 12.2s.014 3.668.072 4.948c.058 1.278.261 2.15.558 2.913a6.21 6.21 0 001.463 2.246 6.21 6.21 0 002.246 1.463c.763.297 1.635.5 2.913.558C8.533 23.986 8.941 24 12 24s3.468-.014 4.748-.072c1.278-.058 2.15-.261 2.913-.558a6.21 6.21 0 002.246-1.463 6.21 6.21 0 001.463-2.246c.297-.763.5-1.635.558-2.913C23.986 15.468 24 15.06 24 12s-.014-3.468-.072-4.748c-.058-1.278-.261-2.15-.558-2.913a6.21 6.21 0 00-1.463-2.246A6.21 6.21 0 0019.661.63C18.898.333 18.026.13 16.748.072 15.468.014 15.06 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+              Instagram
+            </a>
+            <a href="https://www.youtube.com/channel/UCBl_UbQxg1WwXJNXBa_aGlw" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-red-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-red-700 transition-colors btn-press">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.377.504A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.504 9.376.504 9.376.504s7.505 0 9.377-.504a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube
+            </a>
+          </div>
         </div>
       )}
     </div>
@@ -355,6 +410,7 @@ function BattleCard({
   const isOpen = battle.status === 'open';
   const isFinished = battle.status === 'finished';
   const confirmedCount = battle.entries.filter(e => e.payment_status === 'confirmed').length;
+  const slotsLeft = battle.max_players - battle.entries.length;
 
   // Check if winner was decided by tiebreaker (2nd card)
   const wasTiebreak = isFinished && winner && battle.entries.some(
@@ -503,14 +559,18 @@ function BattleCard({
         )}
 
         {/* Join button */}
-        {isOpen && onJoinClick && battle.entries.length < battle.max_players && (
+        {isOpen && onJoinClick && slotsLeft > 0 && (
           <>
             {!isJoining ? (
               <button
                 onClick={onJoinClick}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 rounded-xl text-center text-sm transition-colors btn-press"
+                className={`w-full text-white font-bold py-3 rounded-xl text-center text-sm transition-colors btn-press ${
+                  slotsLeft === 1
+                    ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 animate-urgency-pulse'
+                    : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+                }`}
               >
-                ENTRAR NA BATALHA
+                ENTRAR NA BATALHA {slotsLeft <= 2 && `(${slotsLeft === 1 ? 'Ultima vaga!' : `${slotsLeft} vagas`})`}
               </button>
             ) : (
               <div className="expand-enter">
