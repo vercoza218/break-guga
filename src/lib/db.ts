@@ -117,6 +117,9 @@ function initDb(db: Database.Database) {
   if (!beCols2.some(c => c.name === 'card_value_2')) {
     db.exec("ALTER TABLE battle_entries ADD COLUMN card_value_2 REAL");
   }
+  if (!beCols2.some(c => c.name === 'card_image')) {
+    db.exec("ALTER TABLE battle_entries ADD COLUMN card_image TEXT");
+  }
 }
 
 export default getDb;

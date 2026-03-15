@@ -762,6 +762,7 @@ interface BattleEntry {
   best_card: string | null;
   card_value: number | null;
   card_value_2: number | null;
+  card_image: string | null;
 }
 
 interface Battle {
@@ -906,6 +907,21 @@ function BattlesTab() {
     });
     fetchBattles();
     toast('Pagamento revogado', 'info');
+  };
+
+  const handleUploadCardImage = async (battleId: number, entryId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file, 'card.png');
+    const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!uploadRes.ok) { toast('Erro ao enviar imagem', 'error'); return; }
+    const { url } = await uploadRes.json();
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set_card_image', entry_id: entryId, card_image: url }),
+    });
+    fetchBattles();
+    toast('Foto da carta enviada!');
   };
 
   const handleDelete = async (battleId: number) => {
@@ -1088,15 +1104,28 @@ function BattlesTab() {
                       )}
                       {/* Card info / registration */}
                       {entry.best_card ? (
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium">{entry.best_card}</span>
-                          <span className="text-gray-400 mx-1">|</span>
-                          <span>R$ {(entry.card_value || 0).toFixed(2)}</span>
-                          {(entry.card_value_2 || 0) > 0 && (
-                            <>
-                              <span className="text-gray-400 mx-1">|</span>
-                              <span className="text-gray-400">2a: R$ {(entry.card_value_2 || 0).toFixed(2)}</span>
-                            </>
+                        <div className="flex items-center gap-2">
+                          {entry.card_image && (
+                            <img src={entry.card_image} alt="" className="w-12 h-16 rounded-lg object-cover border border-gray-200" />
+                          )}
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium">{entry.best_card}</span>
+                            <span className="text-gray-400 mx-1">|</span>
+                            <span>R$ {(entry.card_value || 0).toFixed(2)}</span>
+                            {(entry.card_value_2 || 0) > 0 && (
+                              <>
+                                <span className="text-gray-400 mx-1">|</span>
+                                <span className="text-gray-400">2a: R$ {(entry.card_value_2 || 0).toFixed(2)}</span>
+                              </>
+                            )}
+                          </div>
+                          {battle.status === 'finished' && (
+                            <label className="cursor-pointer shrink-0">
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadCardImage(battle.id, entry.id, f); }} />
+                              <span className="bg-blue-100 text-blue-600 text-xs font-bold px-2 py-1 rounded-lg hover:bg-blue-200 transition-colors">
+                                {entry.card_image ? 'Trocar foto' : 'Foto carta'}
+                              </span>
+                            </label>
                           )}
                         </div>
                       ) : battle.status === 'live' ? (

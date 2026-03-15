@@ -10,6 +10,7 @@ interface BattleEntry {
   best_card: string | null;
   card_value: number | null;
   card_value_2: number | null;
+  card_image: string | null;
   payment_status: string;
 }
 
@@ -27,8 +28,18 @@ interface Battle {
   entries: BattleEntry[];
 }
 
+interface RankingPlayer {
+  player_name: string;
+  avatar: string | null;
+  total: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+}
+
 export default function BatalhasPage() {
   const [battles, setBattles] = useState<Battle[]>([]);
+  const [ranking, setRanking] = useState<RankingPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRules, setShowRules] = useState(false);
   const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
@@ -48,11 +59,18 @@ export default function BatalhasPage() {
     setLoading(false);
   }, []);
 
+  const fetchRanking = useCallback(async () => {
+    const res = await fetch('/api/battles/ranking');
+    const data = await res.json();
+    setRanking(data);
+  }, []);
+
   useEffect(() => {
     fetchBattles();
-    const interval = setInterval(fetchBattles, 5000);
+    fetchRanking();
+    const interval = setInterval(() => { fetchBattles(); fetchRanking(); }, 5000);
     return () => clearInterval(interval);
-  }, [fetchBattles]);
+  }, [fetchBattles, fetchRanking]);
 
   const handleUploadAvatar = async (file: File): Promise<string | null> => {
     setUploading(true);
@@ -213,6 +231,58 @@ export default function BatalhasPage() {
         </div>
       )}
 
+      {/* Ranking */}
+      {!loading && ranking.length > 0 && (
+        <div className="mb-10">
+          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>🏅</span> Ranking de Batalhas
+          </h3>
+          <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-4 md:p-6 space-y-3">
+            <div className="bg-amber-100 border border-amber-300 rounded-xl p-3 text-center text-sm text-amber-700">
+              O ranking reseta todo mes. O <strong>Top 1</strong> do mes e premiado!
+            </div>
+            <div className="space-y-2">
+              {ranking.map((player, i) => (
+                <div key={player.player_name} className={`flex items-center gap-3 p-3 rounded-xl border ${
+                  i === 0 ? 'bg-yellow-50 border-yellow-300' : i === 1 ? 'bg-gray-50 border-gray-300' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-200'
+                }`}>
+                  {/* Position */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                    i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {i + 1}
+                  </div>
+                  {/* Avatar */}
+                  {player.avatar ? (
+                    <img src={player.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-bold text-sm shrink-0">
+                      {player.player_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  {/* Name + stats */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-800 text-sm truncate flex items-center gap-1">
+                      {i === 0 && '🥇'}{i === 1 && '🥈'}{i === 2 && '🥉'} {player.player_name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {player.total} batalha{player.total !== 1 ? 's' : ''} | {player.wins}V {player.losses}D
+                    </p>
+                  </div>
+                  {/* Win rate */}
+                  <div className="text-right shrink-0">
+                    <p className={`font-bold text-sm ${player.win_rate >= 50 ? 'text-green-600' : 'text-gray-500'}`}>
+                      {player.win_rate}%
+                    </p>
+                    <p className="text-[10px] text-gray-400 uppercase">win rate</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
       {!loading && battles.length === 0 && (
         <div className="text-center py-16">
@@ -223,6 +293,15 @@ export default function BatalhasPage() {
       )}
     </div>
   );
+}
+
+function formatCardValue(entry: BattleEntry): string {
+  const v1 = (entry.card_value || 0).toFixed(2).replace('.', ',');
+  const v2 = entry.card_value_2 || 0;
+  if (v2 > 0) {
+    return `R$ ${v1} | 2a: R$ ${v2.toFixed(2).replace('.', ',')}`;
+  }
+  return `R$ ${v1}`;
 }
 
 function BattleCard({
@@ -255,6 +334,11 @@ function BattleCard({
   const isOpen = battle.status === 'open';
   const isFinished = battle.status === 'finished';
   const confirmedCount = battle.entries.filter(e => e.payment_status === 'confirmed').length;
+
+  // Check if winner was decided by tiebreaker (2nd card)
+  const wasTiebreak = isFinished && winner && battle.entries.some(
+    (e) => e.id !== winner.id && (e.card_value || 0) === (winner.card_value || 0)
+  );
 
   return (
     <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${isLive ? 'border-red-400 animate-battle-glow' : isFinished ? 'border-gray-300' : 'border-orange-300'}`}>
@@ -348,29 +432,50 @@ function BattleCard({
         {/* Results — winner + other players' cards */}
         {isFinished && winner && (
           <div className="space-y-2">
-            <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-3 text-center">
-              <p className="font-bold text-yellow-700 flex items-center justify-center gap-1">
-                🏆 {winner.player_name}
-              </p>
-              {winner.best_card && (
-                <p className="text-xs text-yellow-600 mt-0.5">{winner.best_card} — R$ {(winner.card_value || 0).toFixed(2).replace('.', ',')}</p>
-              )}
+            {/* Winner card */}
+            <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-3">
+              <div className="flex items-center gap-3">
+                {winner.card_image && (
+                  <img src={winner.card_image} alt="" className="w-16 h-22 rounded-lg object-cover border border-yellow-300 shrink-0" />
+                )}
+                <div className={`${winner.card_image ? '' : 'text-center w-full'}`}>
+                  <p className="font-bold text-yellow-700 flex items-center gap-1 justify-center">
+                    🏆 {winner.player_name}
+                  </p>
+                  {winner.best_card && (
+                    <p className="text-xs text-yellow-600 mt-0.5">
+                      {winner.best_card} — {formatCardValue(winner)}
+                    </p>
+                  )}
+                  {wasTiebreak && (
+                    <p className="text-[10px] text-yellow-500 mt-0.5">Venceu pelo desempate (2a carta)</p>
+                  )}
+                </div>
+              </div>
             </div>
+            {/* Other players' cards */}
             {battle.entries
               .filter((e) => e.id !== winner.id && e.best_card)
               .map((entry) => (
-                <div key={entry.id} className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 flex items-center justify-between text-xs text-gray-500">
-                  <div className="flex items-center gap-1.5">
-                    {entry.avatar ? (
-                      <img src={entry.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-[10px] font-bold">
-                        {entry.player_name.charAt(0).toUpperCase()}
-                      </div>
+                <div key={entry.id} className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                  <div className="flex items-center gap-3">
+                    {entry.card_image && (
+                      <img src={entry.card_image} alt="" className="w-14 h-20 rounded-lg object-cover border border-gray-200 shrink-0" />
                     )}
-                    <span className="font-medium text-gray-600">{entry.player_name}</span>
+                    <div className="flex items-center justify-between flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        {entry.avatar ? (
+                          <img src={entry.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-[10px] font-bold">
+                            {entry.player_name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="font-medium text-gray-600 text-xs">{entry.player_name}</span>
+                      </div>
+                      <span className="text-xs text-gray-500">{entry.best_card} — {formatCardValue(entry)}</span>
+                    </div>
                   </div>
-                  <span>{entry.best_card} — R$ {(entry.card_value || 0).toFixed(2).replace('.', ',')}</span>
                 </div>
               ))}
           </div>
@@ -398,7 +503,7 @@ function BattleCard({
                       className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onJoin?.(); } }}
                     />
-                    {/* Avatar upload — improved UX */}
+                    {/* Avatar upload */}
                     <div>
                       <label className="text-xs text-gray-400 mb-1.5 block">Foto de perfil <span className="text-gray-300">(opcional)</span></label>
                       <div className="flex gap-3 items-center">

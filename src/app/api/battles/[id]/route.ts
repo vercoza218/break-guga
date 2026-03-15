@@ -133,6 +133,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(battle);
   }
 
+  // Upload card image for an entry
+  if (body.action === 'set_card_image') {
+    const { entry_id, card_image } = body;
+    db.prepare(
+      'UPDATE battle_entries SET card_image = ? WHERE id = ? AND battle_id = ?'
+    ).run(card_image, entry_id, id);
+    const entry = db.prepare('SELECT * FROM battle_entries WHERE id = ?').get(entry_id);
+    return NextResponse.json(entry);
+  }
+
   // Update status manually
   if (body.status) {
     db.prepare('UPDATE battles SET status = ? WHERE id = ?').run(body.status, id);
