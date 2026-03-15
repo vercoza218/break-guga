@@ -161,7 +161,17 @@ export default function BatalhasPage() {
             <button onClick={copyPix} className="bg-primary text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-primary-dark transition-colors min-h-[44px] shrink-0 btn-press">Copiar</button>
           </div>
           <a
-            href={`https://wa.me/5581997492084?text=${encodeURIComponent('Ola! Segue o comprovante de pagamento da batalha de booster:')}`}
+            href={`https://wa.me/5581997492084?text=${encodeURIComponent((() => {
+              const b = battles.find(bt => bt.id === justActed);
+              if (!b) return 'Ola! Segue o comprovante de pagamento da batalha de booster:';
+              const total = b.boosters_per_player * b.product_price;
+              return `Ola! Segue o comprovante de pagamento:\n\n` +
+                `Batalha: ${b.title || b.product_name}\n` +
+                `Produto: ${b.product_name}\n` +
+                `Boosters: ${b.boosters_per_player}\n` +
+                `Valor: R$ ${total.toFixed(2)}\n` +
+                `Jogador: ${joinName}`;
+            })())}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors min-h-[44px] text-sm btn-press"
