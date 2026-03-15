@@ -753,15 +753,6 @@ function QueueTab() {
 
 /* =================== BATTLES TAB =================== */
 
-const RARITY_OPTIONS = [
-  { value: 6, label: 'Illustration Rare / Special Art' },
-  { value: 5, label: 'Ultra Rare / Full Art' },
-  { value: 4, label: 'Holo Rare' },
-  { value: 3, label: 'Rare' },
-  { value: 2, label: 'Uncommon' },
-  { value: 1, label: 'Common' },
-];
-
 interface BattleEntry {
   id: number;
   battle_id: number;
@@ -769,8 +760,8 @@ interface BattleEntry {
   avatar: string | null;
   payment_status: string;
   best_card: string | null;
-  card_rarity: number | null;
-  card_hp: number | null;
+  card_value: number | null;
+  card_value_2: number | null;
 }
 
 interface Battle {
@@ -794,6 +785,7 @@ function BattlesTab() {
   const [productId, setProductId] = useState('');
   const [boostersPerPlayer, setBoostersPerPlayer] = useState('1');
   const [maxPlayers, setMaxPlayers] = useState('2');
+  const [battleTitle, setBattleTitle] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
   const { toast } = useToast();
@@ -824,11 +816,13 @@ function BattlesTab() {
         product_id: parseInt(productId),
         boosters_per_player: parseInt(boostersPerPlayer),
         max_players: parseInt(maxPlayers),
+        title: battleTitle || null,
       }),
     });
     setProductId('');
     setBoostersPerPlayer('1');
     setMaxPlayers('2');
+    setBattleTitle('');
     fetchBattles();
     toast('Batalha criada!');
   };
@@ -856,14 +850,25 @@ function BattlesTab() {
     toast(status === 'live' ? 'Batalha ao vivo!' : `Status: ${status}`);
   };
 
-  const handleRegisterCard = async (battleId: number, entryId: number, bestCard: string, cardRarity: number, cardHp: number) => {
+  const handleRegisterCard = async (battleId: number, entryId: number, bestCard: string, cardValue: number, cardValue2: number) => {
     await fetch(`/api/battles/${battleId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'register_card', entry_id: entryId, best_card: bestCard, card_rarity: cardRarity, card_hp: cardHp }),
+      body: JSON.stringify({ action: 'register_card', entry_id: entryId, best_card: bestCard, card_value: cardValue, card_value_2: cardValue2 }),
     });
     fetchBattles();
     toast('Carta registrada!');
+  };
+
+  const handleRemovePlayer = async (battleId: number, entryId: number) => {
+    if (!confirm('Remover este jogador da batalha?')) return;
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove_player', entry_id: entryId }),
+    });
+    fetchBattles();
+    toast('Jogador removido', 'info');
   };
 
   const handleFinish = async (battleId: number) => {
@@ -928,8 +933,6 @@ function BattlesTab() {
     }
   };
 
-  const rarityLabel = (val: number) => RARITY_OPTIONS.find((r) => r.value === val)?.label || '';
-
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-bold text-orange-500">Criar Batalha</h3>
@@ -964,6 +967,13 @@ function BattlesTab() {
             className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
           />
         </div>
+        <input
+          type="text"
+          placeholder="Titulo da batalha (opcional)"
+          value={battleTitle}
+          onChange={(e) => setBattleTitle(e.target.value)}
+          className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
+        />
         <button type="submit" className="w-full md:w-auto bg-orange-500 text-white font-bold px-8 py-3 rounded-xl hover:bg-orange-600 transition-colors min-h-[44px]">
           Criar Batalha
         </button>
@@ -1065,14 +1075,27 @@ function BattlesTab() {
                           </button>
                         )
                       )}
+                      {/* Remove player */}
+                      {battle.status === 'open' && (
+                        <button
+                          onClick={() => handleRemovePlayer(battle.id, entry.id)}
+                          className="bg-red-100 text-red-500 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors min-h-[32px]"
+                        >
+                          Remover
+                        </button>
+                      )}
                       {/* Card info / registration */}
                       {entry.best_card ? (
                         <div className="text-sm text-gray-600">
                           <span className="font-medium">{entry.best_card}</span>
                           <span className="text-gray-400 mx-1">|</span>
-                          <span>{rarityLabel(entry.card_rarity || 0)}</span>
-                          <span className="text-gray-400 mx-1">|</span>
-                          <span>{entry.card_hp} HP</span>
+                          <span>R$ {(entry.card_value || 0).toFixed(2)}</span>
+                          {(entry.card_value_2 || 0) > 0 && (
+                            <>
+                              <span className="text-gray-400 mx-1">|</span>
+                              <span className="text-gray-400">2a: R$ {(entry.card_value_2 || 0).toFixed(2)}</span>
+                            </>
+                          )}
                         </div>
                       ) : battle.status === 'live' ? (
                         <CardRegistrationForm battleId={battle.id} entryId={entry.id} onRegister={handleRegisterCard} />
@@ -1116,7 +1139,7 @@ function BattlesTab() {
               {battle.status === 'finished' && winner && (
                 <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-center">
                   <p className="text-lg font-bold text-yellow-700">🏆 Vencedor: {winner.player_name}</p>
-                  <p className="text-sm text-yellow-600">{winner.best_card} — {rarityLabel(winner.card_rarity || 0)} ({winner.card_hp} HP)</p>
+                  <p className="text-sm text-yellow-600">{winner.best_card} — R$ {(winner.card_value || 0).toFixed(2)}</p>
                 </div>
               )}
             </div>
@@ -1127,21 +1150,18 @@ function BattlesTab() {
   );
 }
 
-function CardRegistrationForm({ battleId, entryId, onRegister }: { battleId: number; entryId: number; onRegister: (bId: number, eId: number, card: string, rarity: number, hp: number) => void }) {
+function CardRegistrationForm({ battleId, entryId, onRegister }: { battleId: number; entryId: number; onRegister: (bId: number, eId: number, card: string, cardValue: number, cardValue2: number) => void }) {
   const [cardName, setCardName] = useState('');
-  const [rarity, setRarity] = useState('');
-  const [hp, setHp] = useState('');
+  const [cardValue, setCardValue] = useState('');
+  const [cardValue2, setCardValue2] = useState('');
 
   return (
     <div className="flex flex-col md:flex-row gap-2">
       <input type="text" placeholder="Nome da carta" value={cardName} onChange={(e) => setCardName(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-full md:w-36" />
-      <select value={rarity} onChange={(e) => setRarity(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px]">
-        <option value="">Raridade</option>
-        {RARITY_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-      </select>
-      <input type="number" placeholder="HP" value={hp} onChange={(e) => setHp(e.target.value)} min={0} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-20" />
+      <input type="number" placeholder="Valor R$" value={cardValue} onChange={(e) => setCardValue(e.target.value)} min={0} step="0.01" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
+      <input type="number" placeholder="2a carta R$" value={cardValue2} onChange={(e) => setCardValue2(e.target.value)} min={0} step="0.01" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
       <button
-        onClick={() => { if (cardName && rarity && hp) onRegister(battleId, entryId, cardName, parseInt(rarity), parseInt(hp)); }}
+        onClick={() => { if (cardName && cardValue) onRegister(battleId, entryId, cardName, parseFloat(cardValue), parseFloat(cardValue2 || '0')); }}
         className="bg-orange-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-orange-600 transition-colors text-sm min-h-[36px] whitespace-nowrap"
       >
         Registrar

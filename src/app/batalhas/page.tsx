@@ -3,22 +3,13 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useToast } from '@/components/Toast';
 
-interface Product {
-  id: number;
-  name: string;
-  stock: number;
-  price: number;
-  image: string | null;
-  coming_soon: number;
-}
-
 interface BattleEntry {
   id: number;
   player_name: string;
   avatar: string | null;
   best_card: string | null;
-  card_rarity: number | null;
-  card_hp: number | null;
+  card_value: number | null;
+  card_value_2: number | null;
   payment_status: string;
 }
 
@@ -36,34 +27,14 @@ interface Battle {
   entries: BattleEntry[];
 }
 
-const RARITY_LIST = [
-  'Illustration Rare / Special Art',
-  'Ultra Rare / Full Art',
-  'Holo Rare',
-  'Rare',
-  'Uncommon',
-  'Common',
-];
-
 export default function BatalhasPage() {
   const [battles, setBattles] = useState<Battle[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRules, setShowRules] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
   const [justActed, setJustActed] = useState<number | null>(null);
-  const { toast } = useToast();
-
-  // Create form state
-  const [createName, setCreateName] = useState('');
-  const [createProduct, setCreateProduct] = useState('');
-  const [createBoosters, setCreateBoosters] = useState('1');
-  const [createOpponents, setCreateOpponents] = useState('1');
-  const [createTitle, setCreateTitle] = useState('');
-  const [createAvatar, setCreateAvatar] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   // Join form state
   const [joinName, setJoinName] = useState('');
@@ -77,18 +48,11 @@ export default function BatalhasPage() {
     setLoading(false);
   }, []);
 
-  const fetchProducts = useCallback(async () => {
-    const res = await fetch('/api/products');
-    const data = await res.json();
-    setProducts(data.filter((p: Product) => !p.coming_soon && p.stock > 0));
-  }, []);
-
   useEffect(() => {
     fetchBattles();
-    fetchProducts();
     const interval = setInterval(fetchBattles, 5000);
     return () => clearInterval(interval);
-  }, [fetchBattles, fetchProducts]);
+  }, [fetchBattles]);
 
   const handleUploadAvatar = async (file: File): Promise<string | null> => {
     setUploading(true);
@@ -103,45 +67,11 @@ export default function BatalhasPage() {
     return null;
   };
 
-  const handleCreateFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = await handleUploadAvatar(file);
-    if (url) setCreateAvatar(url);
-  };
-
   const handleJoinFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = await handleUploadAvatar(file);
     if (url) setJoinAvatar(url);
-  };
-
-  const handleCreate = async () => {
-    if (!createName.trim() || !createProduct) return;
-    await fetch('/api/battles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        product_id: parseInt(createProduct),
-        boosters_per_player: parseInt(createBoosters),
-        max_players: parseInt(createOpponents) + 1,
-        player_name: createName,
-        avatar: createAvatar,
-        title: createTitle || null,
-      }),
-    });
-    setCreateName('');
-    setCreateProduct('');
-    setCreateBoosters('1');
-    setCreateOpponents('1');
-    setCreateTitle('');
-    setCreateAvatar(null);
-    setShowCreateForm(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    fetchBattles();
-    toast('Batalha criada! Envie o comprovante de pagamento.');
-    setJustActed(Date.now());
   };
 
   const handleJoin = async (battleId: number) => {
@@ -195,108 +125,14 @@ export default function BatalhasPage() {
           <ol className="list-decimal list-inside space-y-1.5">
             <li>Cada jogador compra a mesma quantidade de boosters da mesma colecao.</li>
             <li>Os boosters sao abertos ao vivo na live.</li>
-            <li>A <strong>carta mais rara</strong> de cada jogador e registrada.</li>
-            <li>O jogador com a carta de maior raridade vence e leva todas as cartas.</li>
-            <li>Em caso de empate na raridade, vence a carta com <strong>maior HP</strong>.</li>
+            <li>A <strong>carta mais valiosa</strong> de cada jogador e registrada (menor preco da Liga Pokemon no momento da live).</li>
+            <li>O jogador com a carta de <strong>maior valor</strong> vence e leva todas as cartas.</li>
+            <li>Em caso de empate, vence quem tiver a <strong>segunda carta mais cara</strong>.</li>
           </ol>
-          <div className="pt-2">
-            <p className="font-semibold mb-1">Hierarquia de Raridade (da maior pra menor):</p>
-            <div className="flex flex-wrap gap-1.5">
-              {RARITY_LIST.map((r, i) => (
-                <span key={r} className="bg-white border border-blue-200 rounded-full px-2.5 py-0.5 text-xs">
-                  {i + 1}. {r}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
-      {/* Create battle CTA */}
-      {!showCreateForm ? (
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 rounded-2xl text-center transition-colors btn-press mb-8 text-lg shadow-md"
-        >
-          + Criar Batalha
-        </button>
-      ) : (
-        <div className="bg-white border-2 border-orange-300 rounded-2xl p-5 mb-8 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-orange-600 text-lg">Criar Batalha</h3>
-            <button onClick={() => setShowCreateForm(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Seu nome"
-              value={createName}
-              onChange={(e) => setCreateName(e.target.value)}
-              className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
-            />
-            <div className="flex gap-2 items-center">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleCreateFileChange}
-                className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 text-sm min-h-[44px] file:mr-2 file:bg-orange-500 file:text-white file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:cursor-pointer"
-              />
-              {createAvatar && <img src={createAvatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-orange-300" />}
-            </div>
-          </div>
-
-          <select
-            value={createProduct}
-            onChange={(e) => setCreateProduct(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
-          >
-            <option value="">Selecione a colecao</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>{p.name} — R$ {p.price.toFixed(2).replace('.', ',')} por booster</option>
-            ))}
-          </select>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-500 font-medium mb-1 block">Boosters por jogador</label>
-              <input type="number" value={createBoosters} onChange={(e) => setCreateBoosters(e.target.value)} min={1} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 font-medium mb-1 block">Quantos oponentes</label>
-              <input type="number" value={createOpponents} onChange={(e) => setCreateOpponents(e.target.value)} min={1} max={7} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]" />
-            </div>
-          </div>
-
-          <input
-            type="text"
-            placeholder="Titulo da batalha (opcional)"
-            value={createTitle}
-            onChange={(e) => setCreateTitle(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
-          />
-
-          {createProduct && (
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-center">
-              <span className="text-sm text-gray-500">Custo por jogador:</span>
-              <span className="text-orange-600 font-bold text-lg ml-2">
-                R$ {((products.find(p => p.id === parseInt(createProduct))?.price || 0) * parseInt(createBoosters || '1')).toFixed(2).replace('.', ',')}
-              </span>
-            </div>
-          )}
-
-          <button
-            onClick={handleCreate}
-            disabled={!createName.trim() || !createProduct || uploading}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 rounded-xl transition-colors btn-press disabled:opacity-50"
-          >
-            {uploading ? 'Enviando foto...' : 'Criar Batalha'}
-          </button>
-        </div>
-      )}
-
-      {/* Payment block shown after creating/joining */}
+      {/* Payment block shown after joining */}
       {justActed && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-8 space-y-3 animate-fade-slide-in">
           <h4 className="text-primary font-bold">Pagamento via PIX</h4>
@@ -382,7 +218,7 @@ export default function BatalhasPage() {
         <div className="text-center py-16">
           <div className="text-6xl mb-4">⚔️</div>
           <p className="text-gray-400 mb-2">Nenhuma batalha ainda.</p>
-          <p className="text-gray-400 text-sm">Crie a primeira batalha e desafie seus amigos!</p>
+          <p className="text-gray-400 text-sm">Em breve novas batalhas serao criadas!</p>
         </div>
       )}
     </div>
@@ -471,7 +307,13 @@ function BattleCard({
               }`}>
                 {entry ? (
                   <div className="flex items-center justify-center gap-1.5">
-                    {entry.avatar && <img src={entry.avatar} alt="" className="w-6 h-6 rounded-full object-cover" />}
+                    {entry.avatar ? (
+                      <img src={entry.avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 text-xs font-bold">
+                        {entry.player_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     {winner?.id === entry.id && <span>🏆</span>}
                     <span className="truncate text-xs">{entry.player_name}</span>
                     {entry.payment_status === 'confirmed' ? (
@@ -510,7 +352,7 @@ function BattleCard({
               🏆 {winner.player_name}
             </p>
             {winner.best_card && (
-              <p className="text-xs text-yellow-600 mt-0.5">{winner.best_card} — {winner.card_hp} HP</p>
+              <p className="text-xs text-yellow-600 mt-0.5">{winner.best_card} — R$ {(winner.card_value || 0).toFixed(2).replace('.', ',')}</p>
             )}
           </div>
         )}
@@ -537,15 +379,30 @@ function BattleCard({
                       className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onJoin?.(); } }}
                     />
-                    <div className="flex gap-2 items-center">
-                      <input
-                        ref={joinFileRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={onJoinFileChange}
-                        className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 text-sm min-h-[44px] file:mr-2 file:bg-orange-500 file:text-white file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:cursor-pointer"
-                      />
-                      {joinAvatar && <img src={joinAvatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-orange-300" />}
+                    {/* Avatar upload — improved UX */}
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1.5 block">Foto de perfil <span className="text-gray-300">(opcional)</span></label>
+                      <div className="flex gap-3 items-center">
+                        {joinAvatar ? (
+                          <img src={joinAvatar} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-orange-300 shrink-0" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                          </div>
+                        )}
+                        <label className="flex-1 cursor-pointer">
+                          <input
+                            ref={joinFileRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={onJoinFileChange}
+                            className="hidden"
+                          />
+                          <div className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-center text-sm text-gray-500 hover:bg-gray-100 hover:border-orange-300 transition-colors">
+                            {joinAvatar ? 'Trocar foto' : 'Escolher foto'}
+                          </div>
+                        </label>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button

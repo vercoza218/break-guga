@@ -8,6 +8,8 @@ interface EntryRow {
   best_card: string | null;
   card_rarity: number | null;
   card_hp: number | null;
+  card_value: number | null;
+  card_value_2: number | null;
   payment_status: string;
 }
 
@@ -83,30 +85,45 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(battle);
   }
 
+  // Remove player from battle (admin)
+  if (body.action === 'remove_player') {
+    const { entry_id } = body;
+    const entry = db.prepare('SELECT * FROM battle_entries WHERE id = ? AND battle_id = ?').get(entry_id, id);
+    if (!entry) {
+      return NextResponse.json({ error: 'Jogador nao encontrado' }, { status: 404 });
+    }
+    db.prepare('DELETE FROM battle_entries WHERE id = ? AND battle_id = ?').run(entry_id, id);
+    // If removed player was creator, clear creator_entry_id
+    db.prepare('UPDATE battles SET creator_entry_id = NULL WHERE id = ? AND creator_entry_id = ?').run(id, entry_id);
+    checkAndUpdateReady(db, id);
+    const battle = db.prepare('SELECT * FROM battles WHERE id = ?').get(id);
+    return NextResponse.json(battle);
+  }
+
   // Register card result
   if (body.action === 'register_card') {
-    const { entry_id, best_card, card_rarity, card_hp } = body;
+    const { entry_id, best_card, card_value, card_value_2 } = body;
     db.prepare(
-      'UPDATE battle_entries SET best_card = ?, card_rarity = ?, card_hp = ? WHERE id = ? AND battle_id = ?'
-    ).run(best_card, card_rarity, card_hp, entry_id, id);
+      'UPDATE battle_entries SET best_card = ?, card_value = ?, card_value_2 = ? WHERE id = ? AND battle_id = ?'
+    ).run(best_card, card_value || 0, card_value_2 || 0, entry_id, id);
 
     const entry = db.prepare('SELECT * FROM battle_entries WHERE id = ?').get(entry_id);
     return NextResponse.json(entry);
   }
 
-  // Calculate winner
+  // Calculate winner (by card price, tiebreak = 2nd card price)
   if (body.action === 'finish') {
     const entries = db.prepare('SELECT * FROM battle_entries WHERE battle_id = ?').all(id) as EntryRow[];
-    const allRegistered = entries.every((e) => e.card_rarity !== null);
+    const allRegistered = entries.every((e) => e.card_value !== null);
     if (!allRegistered) {
       return NextResponse.json({ error: 'Todas as cartas devem ser registradas antes de finalizar' }, { status: 400 });
     }
 
     const sorted = [...entries].sort((a, b) => {
-      if ((b.card_rarity || 0) !== (a.card_rarity || 0)) {
-        return (b.card_rarity || 0) - (a.card_rarity || 0);
+      if ((b.card_value || 0) !== (a.card_value || 0)) {
+        return (b.card_value || 0) - (a.card_value || 0);
       }
-      return (b.card_hp || 0) - (a.card_hp || 0);
+      return (b.card_value_2 || 0) - (a.card_value_2 || 0);
     });
 
     const winner = sorted[0];
