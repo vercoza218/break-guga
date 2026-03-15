@@ -29,7 +29,7 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history' | 'battles'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history' | 'battles' | 'ranking'>('products');
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -112,6 +112,16 @@ export default function AdminPage() {
           Batalhas
         </button>
         <button
+          onClick={() => setActiveTab('ranking')}
+          className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
+            activeTab === 'ranking'
+              ? 'text-yellow-600 border-b-2 border-yellow-500'
+              : 'text-gray-400'
+          }`}
+        >
+          Ranking
+        </button>
+        <button
           onClick={() => setActiveTab('history')}
           className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
             activeTab === 'history'
@@ -157,6 +167,16 @@ export default function AdminPage() {
             Batalhas
           </button>
           <button
+            onClick={() => setActiveTab('ranking')}
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+              activeTab === 'ranking'
+                ? 'bg-yellow-500 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Ranking
+          </button>
+          <button
             onClick={() => setActiveTab('history')}
             className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
               activeTab === 'history'
@@ -174,6 +194,7 @@ export default function AdminPage() {
         {activeTab === 'products' && <ProductsTab />}
         {activeTab === 'queue' && <QueueTab />}
         {activeTab === 'battles' && <BattlesTab />}
+        {activeTab === 'ranking' && <RankingTab />}
         {activeTab === 'history' && <HistoryTab />}
       </div>
     </div>
@@ -1176,13 +1197,11 @@ function BattlesTab() {
         })}
       </div>
 
-      {/* Ranking Management */}
-      <RankingManager />
     </div>
   );
 }
 
-function RankingManager() {
+function RankingTab() {
   const [ranking, setRanking] = useState<{ id: number; player_name: string; avatar: string | null; wins: number; losses: number }[]>([]);
   const [newName, setNewName] = useState('');
   const [newWins, setNewWins] = useState('0');
@@ -1248,9 +1267,9 @@ function RankingManager() {
   };
 
   return (
-    <div className="space-y-4 border-t border-orange-200 pt-6 mt-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-orange-500">Ranking de Batalhas</h3>
+        <h3 className="text-lg font-bold text-yellow-600">🏆 Ranking de Batalhas</h3>
         {ranking.length > 0 && (
           <button onClick={handleResetAll} className="bg-red-100 text-red-500 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors">
             Resetar Ranking
