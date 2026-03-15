@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useToast } from '@/components/Toast';
 
 interface Product {
@@ -35,6 +35,7 @@ export default function StorePage() {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const fetchProducts = useCallback(async () => {
     const res = await fetch('/api/products');
@@ -108,6 +109,7 @@ export default function StorePage() {
           return (
             <div
               key={product.id}
+              ref={(el) => { cardRefs.current[product.id] = el; }}
               className={`bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden shadow-sm hover:shadow-md relative ${
                 lowStock
                   ? 'border-red-300 hover:border-red-400'
@@ -185,8 +187,13 @@ export default function StorePage() {
                   <>
                     {qty === 0 ? (
                       <button
-                        onClick={() => setQty(product.id, 1)}
-                        className={`w-full font-bold py-3 rounded-xl transition-colors text-sm text-white ${
+                        onClick={() => {
+                          setQty(product.id, 1);
+                          setTimeout(() => {
+                            cardRefs.current[product.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 50);
+                        }}
+                        className={`w-full font-bold py-3 rounded-xl transition-colors text-sm text-white btn-press ${
                           lowStock
                             ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
                             : 'bg-green-500 hover:bg-green-600'
@@ -195,46 +202,50 @@ export default function StorePage() {
                         {lowStock ? 'GARANTIR O MEU' : 'QUERO'}
                       </button>
                     ) : (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <label className="text-sm text-gray-500 font-medium">Qtd:</label>
-                          <select
-                            value={qty}
-                            onChange={(e) =>
-                              setQty(product.id, Number(e.target.value))
-                            }
-                            className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
-                          >
-                            {Array.from({ length: product.stock }, (_, i) => i + 1).map(
-                              (n) => (
-                                <option key={n} value={n}>
-                                  {n}
-                                </option>
-                              )
-                            )}
-                          </select>
-                          <button
-                            onClick={() => setQty(product.id, 0)}
-                            className="text-gray-400 hover:text-red-500 transition-colors text-lg"
-                            title="Cancelar"
-                          >
-                            ✕
-                          </button>
-                        </div>
+                      <div className="expand-enter">
+                        <div>
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <label className="text-sm text-gray-500 font-medium">Qtd:</label>
+                              <select
+                                value={qty}
+                                onChange={(e) =>
+                                  setQty(product.id, Number(e.target.value))
+                                }
+                                className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
+                              >
+                                {Array.from({ length: product.stock }, (_, i) => i + 1).map(
+                                  (n) => (
+                                    <option key={n} value={n}>
+                                      {n}
+                                    </option>
+                                  )
+                                )}
+                              </select>
+                              <button
+                                onClick={() => setQty(product.id, 0)}
+                                className="text-gray-400 hover:text-red-500 transition-colors text-lg btn-press"
+                                title="Cancelar"
+                              >
+                                ✕
+                              </button>
+                            </div>
 
-                        <div className="bg-gray-50 rounded-xl p-3 text-center">
-                          <span className="text-sm text-gray-500">Total:</span>
-                          <span className="text-green-600 font-bold text-xl ml-2">
-                            R$ {total.toFixed(2).replace('.', ',')}
-                          </span>
-                        </div>
+                            <div className="bg-gray-50 rounded-xl p-3 text-center">
+                              <span className="text-sm text-gray-500">Total:</span>
+                              <span className="text-green-600 font-bold text-xl ml-2">
+                                R$ {total.toFixed(2).replace('.', ',')}
+                              </span>
+                            </div>
 
-                        <PaymentBlock
-                          onCopyPix={copyPix}
-                          productName={product.name}
-                          quantity={qty}
-                          total={total}
-                        />
+                            <PaymentBlock
+                              onCopyPix={copyPix}
+                              productName={product.name}
+                              quantity={qty}
+                              total={total}
+                            />
+                          </div>
+                        </div>
                       </div>
                     )}
                   </>
@@ -327,7 +338,7 @@ function PaymentBlock({
           </span>
           <button
             onClick={onCopyPix}
-            className="bg-primary text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-primary-dark transition-colors min-h-[44px] shrink-0"
+            className="bg-primary text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-primary-dark transition-colors min-h-[44px] shrink-0 btn-press"
           >
             Copiar
           </button>
@@ -337,7 +348,7 @@ function PaymentBlock({
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors min-h-[44px] text-sm"
+          className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors min-h-[44px] text-sm btn-press"
         >
           Enviar comprovante via WhatsApp
         </a>
