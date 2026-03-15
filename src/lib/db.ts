@@ -90,6 +90,24 @@ function initDb(db: Database.Database) {
       FOREIGN KEY (battle_id) REFERENCES battles(id) ON DELETE CASCADE
     );
   `);
+
+  // Migration: add avatar and payment_status to battle_entries
+  const beCols = db.prepare("PRAGMA table_info(battle_entries)").all() as { name: string }[];
+  if (!beCols.some(c => c.name === 'avatar')) {
+    db.exec("ALTER TABLE battle_entries ADD COLUMN avatar TEXT");
+  }
+  if (!beCols.some(c => c.name === 'payment_status')) {
+    db.exec("ALTER TABLE battle_entries ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'pending'");
+  }
+
+  // Migration: add title and creator_entry_id to battles
+  const btCols = db.prepare("PRAGMA table_info(battles)").all() as { name: string }[];
+  if (!btCols.some(c => c.name === 'title')) {
+    db.exec("ALTER TABLE battles ADD COLUMN title TEXT");
+  }
+  if (!btCols.some(c => c.name === 'creator_entry_id')) {
+    db.exec("ALTER TABLE battles ADD COLUMN creator_entry_id INTEGER");
+  }
 }
 
 export default getDb;

@@ -8,9 +8,23 @@ interface EntryRow {
   best_card: string | null;
   card_rarity: number | null;
   card_hp: number | null;
+  payment_status: string;
 }
 
-// PUT — update battle (status, add entry, register card results)
+function checkAndUpdateReady(db: ReturnType<typeof getDb>, battleId: string | number) {
+  const battle = db.prepare('SELECT * FROM battles WHERE id = ?').get(battleId) as { max_players: number; status: string } | undefined;
+  if (!battle) return;
+  const entries = db.prepare('SELECT * FROM battle_entries WHERE battle_id = ?').all(battleId) as EntryRow[];
+  const isFull = entries.length >= battle.max_players;
+  const allPaid = entries.every((e) => e.payment_status === 'confirmed');
+
+  if (isFull && allPaid && battle.status === 'open') {
+    db.prepare("UPDATE battles SET status = 'ready' WHERE id = ?").run(battleId);
+  } else if ((!isFull || !allPaid) && battle.status === 'ready') {
+    db.prepare("UPDATE battles SET status = 'open' WHERE id = ?").run(battleId);
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const db = getDb();
   const id = params.id;
@@ -21,9 +35,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: 'Batalha nao encontrada' }, { status: 404 });
   }
 
-  // Join battle (add player)
+  // Join battle
   if (body.action === 'join') {
-    const { player_name } = body;
+    const { player_name, avatar } = body;
     if (!player_name) {
       return NextResponse.json({ error: 'Nome do jogador obrigatorio' }, { status: 400 });
     }
@@ -33,19 +47,43 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Batalha lotada' }, { status: 400 });
     }
 
-    db.prepare('INSERT INTO battle_entries (battle_id, player_name) VALUES (?, ?)').run(id, player_name);
+    db.prepare(
+      'INSERT INTO battle_entries (battle_id, player_name, avatar, payment_status) VALUES (?, ?, ?, ?)'
+    ).run(id, player_name, avatar || null, 'pending');
 
-    // Auto-update status to 'ready' when full
-    const newCount = entries.length + 1;
-    if (newCount >= existing.max_players) {
-      db.prepare("UPDATE battles SET status = 'ready' WHERE id = ?").run(id);
-    }
+    checkAndUpdateReady(db, id);
 
     const battle = db.prepare('SELECT * FROM battles WHERE id = ?').get(id);
     return NextResponse.json(battle);
   }
 
-  // Register card result for an entry
+  // Confirm payment (admin)
+  if (body.action === 'confirm_payment') {
+    const { entry_id } = body;
+    db.prepare(
+      "UPDATE battle_entries SET payment_status = 'confirmed' WHERE id = ? AND battle_id = ?"
+    ).run(entry_id, id);
+
+    checkAndUpdateReady(db, id);
+
+    const battle = db.prepare('SELECT * FROM battles WHERE id = ?').get(id);
+    return NextResponse.json(battle);
+  }
+
+  // Revoke payment (admin)
+  if (body.action === 'revoke_payment') {
+    const { entry_id } = body;
+    db.prepare(
+      "UPDATE battle_entries SET payment_status = 'pending' WHERE id = ? AND battle_id = ?"
+    ).run(entry_id, id);
+
+    checkAndUpdateReady(db, id);
+
+    const battle = db.prepare('SELECT * FROM battles WHERE id = ?').get(id);
+    return NextResponse.json(battle);
+  }
+
+  // Register card result
   if (body.action === 'register_card') {
     const { entry_id, best_card, card_rarity, card_hp } = body;
     db.prepare(
@@ -59,14 +97,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   // Calculate winner
   if (body.action === 'finish') {
     const entries = db.prepare('SELECT * FROM battle_entries WHERE battle_id = ?').all(id) as EntryRow[];
-
-    // All entries must have cards registered
     const allRegistered = entries.every((e) => e.card_rarity !== null);
     if (!allRegistered) {
       return NextResponse.json({ error: 'Todas as cartas devem ser registradas antes de finalizar' }, { status: 400 });
     }
 
-    // Sort by rarity desc, then HP desc
     const sorted = [...entries].sort((a, b) => {
       if ((b.card_rarity || 0) !== (a.card_rarity || 0)) {
         return (b.card_rarity || 0) - (a.card_rarity || 0);
@@ -81,7 +116,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(battle);
   }
 
-  // Update status manually (e.g., to 'live')
+  // Update status manually
   if (body.status) {
     db.prepare('UPDATE battles SET status = ? WHERE id = ?').run(body.status, id);
     const battle = db.prepare('SELECT * FROM battles WHERE id = ?').get(id);
@@ -91,7 +126,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   return NextResponse.json({ error: 'Acao invalida' }, { status: 400 });
 }
 
-// DELETE — remove battle
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   const db = getDb();
   const id = params.id;

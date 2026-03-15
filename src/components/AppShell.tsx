@@ -12,6 +12,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const isVitrine = pathname === '/';
+  const isBatalhas = pathname === '/batalhas';
   const isFila = pathname === '/fila';
 
   return (
@@ -33,6 +34,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               className={`transition-colors font-medium ${isVitrine ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
               Vitrine
+            </a>
+            <a
+              href="/batalhas"
+              className={`transition-colors font-medium ${isBatalhas ? 'text-orange-500' : 'text-gray-600 hover:text-orange-500'}`}
+            >
+              Batalhas
             </a>
             <a
               href="/fila"

@@ -766,6 +766,8 @@ interface BattleEntry {
   id: number;
   battle_id: number;
   player_name: string;
+  avatar: string | null;
+  payment_status: string;
   best_card: string | null;
   card_rarity: number | null;
   card_hp: number | null;
@@ -780,6 +782,8 @@ interface Battle {
   boosters_per_player: number;
   max_players: number;
   status: string;
+  title: string | null;
+  creator_entry_id: number | null;
   winner_entry_id: number | null;
   entries: BattleEntry[];
 }
@@ -877,6 +881,26 @@ function BattlesTab() {
     toast('Batalha finalizada! Vencedor definido!');
   };
 
+  const handleConfirmPayment = async (battleId: number, entryId: number) => {
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm_payment', entry_id: entryId }),
+    });
+    fetchBattles();
+    toast('Pagamento confirmado!');
+  };
+
+  const handleRevokePayment = async (battleId: number, entryId: number) => {
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'revoke_payment', entry_id: entryId }),
+    });
+    fetchBattles();
+    toast('Pagamento revogado', 'info');
+  };
+
   const handleDelete = async (battleId: number) => {
     if (!confirm('Excluir esta batalha?')) return;
     await fetch(`/api/battles/${battleId}`, { method: 'DELETE' });
@@ -952,6 +976,7 @@ function BattlesTab() {
       <div className="space-y-4">
         {battles.map((battle) => {
           const winner = battle.entries.find((e) => e.id === battle.winner_entry_id);
+          const paidCount = battle.entries.filter((e) => e.payment_status === 'confirmed').length;
           return (
             <div key={battle.id} className="bg-white border border-orange-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
               {/* Header */}
@@ -961,14 +986,23 @@ function BattlesTab() {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-gray-800">{battle.product_name}</p>
+                    <p className="font-bold text-gray-800">
+                      {battle.title || battle.product_name}
+                    </p>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(battle.status)}`}>
                       {statusLabel(battle.status)}
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    {battle.boosters_per_player} booster(s) por jogador | {battle.entries.length}/{battle.max_players} jogadores | R$ {(battle.product_price * battle.boosters_per_player).toFixed(2)} por jogador
+                    {battle.product_name} | {battle.boosters_per_player} booster(s) | {battle.entries.length}/{battle.max_players} jogadores | R$ {(battle.product_price * battle.boosters_per_player).toFixed(2)}/jogador
                   </p>
+                  {battle.entries.length > 0 && (
+                    <p className="text-xs mt-1">
+                      <span className={`font-bold ${paidCount === battle.entries.length ? 'text-green-600' : 'text-amber-600'}`}>
+                        {paidCount}/{battle.entries.length} pagamentos confirmados
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2 shrink-0 flex-wrap">
                   {battle.status === 'ready' && (
@@ -993,22 +1027,59 @@ function BattlesTab() {
                 {battle.entries.map((entry) => (
                   <div key={entry.id} className={`flex flex-col md:flex-row md:items-center gap-2 p-3 rounded-xl border ${winner?.id === entry.id ? 'bg-yellow-50 border-yellow-300' : 'bg-gray-50 border-gray-200'}`}>
                     <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {entry.avatar ? (
+                        <img src={entry.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 text-sm font-bold shrink-0">
+                          {entry.player_name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       {winner?.id === entry.id && <span className="text-lg">🏆</span>}
                       <span className="font-bold text-gray-800">{entry.player_name}</span>
+                      {battle.creator_entry_id === entry.id && (
+                        <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium">criador</span>
+                      )}
+                      {/* Payment badge */}
+                      {entry.payment_status === 'confirmed' ? (
+                        <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">✓ Pago</span>
+                      ) : (
+                        <span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-bold">⏳ Pendente</span>
+                      )}
                     </div>
-                    {entry.best_card ? (
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">{entry.best_card}</span>
-                        <span className="text-gray-400 mx-1">|</span>
-                        <span>{rarityLabel(entry.card_rarity || 0)}</span>
-                        <span className="text-gray-400 mx-1">|</span>
-                        <span>{entry.card_hp} HP</span>
-                      </div>
-                    ) : battle.status === 'live' ? (
-                      <CardRegistrationForm battleId={battle.id} entryId={entry.id} onRegister={handleRegisterCard} />
-                    ) : (
-                      <span className="text-xs text-gray-400">Aguardando...</span>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Payment actions */}
+                      {battle.status !== 'finished' && (
+                        entry.payment_status === 'confirmed' ? (
+                          <button
+                            onClick={() => handleRevokePayment(battle.id, entry.id)}
+                            className="bg-amber-100 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-amber-200 transition-colors min-h-[32px]"
+                          >
+                            Revogar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleConfirmPayment(battle.id, entry.id)}
+                            className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-green-600 transition-colors min-h-[32px]"
+                          >
+                            Confirmar Pgto
+                          </button>
+                        )
+                      )}
+                      {/* Card info / registration */}
+                      {entry.best_card ? (
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">{entry.best_card}</span>
+                          <span className="text-gray-400 mx-1">|</span>
+                          <span>{rarityLabel(entry.card_rarity || 0)}</span>
+                          <span className="text-gray-400 mx-1">|</span>
+                          <span>{entry.card_hp} HP</span>
+                        </div>
+                      ) : battle.status === 'live' ? (
+                        <CardRegistrationForm battleId={battle.id} entryId={entry.id} onRegister={handleRegisterCard} />
+                      ) : (
+                        <span className="text-xs text-gray-400">Aguardando carta...</span>
+                      )}
+                    </div>
                   </div>
                 ))}
 
