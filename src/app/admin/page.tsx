@@ -13,6 +13,7 @@ interface Product {
   price: number;
   image: string | null;
   coming_soon: number;
+  collection_url: string | null;
 }
 
 interface QueueItem {
@@ -165,6 +166,7 @@ function ProductsTab() {
   const [name, setName] = useState('');
   const [stock, setStock] = useState('');
   const [price, setPrice] = useState('');
+  const [collectionUrl, setCollectionUrl] = useState('');
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -172,6 +174,7 @@ function ProductsTab() {
   const [editName, setEditName] = useState('');
   const [editStock, setEditStock] = useState('');
   const [editPrice, setEditPrice] = useState('');
+  const [editCollectionUrl, setEditCollectionUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -228,12 +231,14 @@ function ProductsTab() {
         stock: parseInt(stock),
         price: parseFloat(price),
         image: imageUrl,
+        collection_url: collectionUrl || null,
       }),
     });
 
     setName('');
     setStock('');
     setPrice('');
+    setCollectionUrl('');
     setCroppedBlob(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -250,6 +255,7 @@ function ProductsTab() {
         name: editName,
         stock: parseInt(editStock),
         price: parseFloat(editPrice),
+        collection_url: editCollectionUrl || null,
       }),
     });
     setEditingId(null);
@@ -279,6 +285,7 @@ function ProductsTab() {
     setEditName(product.name);
     setEditStock(product.stock.toString());
     setEditPrice(product.price.toString());
+    setEditCollectionUrl(product.collection_url || '');
   };
 
   return (
@@ -325,6 +332,13 @@ function ProductsTab() {
             className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px] file:mr-3 file:bg-primary file:text-white file:border-0 file:rounded file:px-3 file:py-1 file:font-medium file:cursor-pointer"
           />
         </div>
+        <input
+          type="url"
+          placeholder="Link da colecao (Liga Pokemon) — opcional"
+          value={collectionUrl}
+          onChange={(e) => setCollectionUrl(e.target.value)}
+          className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
+        />
 
         {imagePreview && (
           <div className="flex items-center gap-3">
@@ -398,6 +412,13 @@ function ProductsTab() {
                     className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
                   />
                 </div>
+                <input
+                  type="url"
+                  value={editCollectionUrl}
+                  onChange={(e) => setEditCollectionUrl(e.target.value)}
+                  placeholder="Link da colecao (Liga Pokemon)"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
+                />
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(product.id)}

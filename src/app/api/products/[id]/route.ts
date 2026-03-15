@@ -5,7 +5,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   const db = getDb();
   const id = params.id;
   const body = await request.json();
-  const { name, stock, price, image, coming_soon } = body;
+  const { name, stock, price, image, coming_soon, collection_url } = body;
 
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
   if (!existing) {
@@ -13,8 +13,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   db.prepare(
-    'UPDATE products SET name = COALESCE(?, name), stock = COALESCE(?, stock), price = COALESCE(?, price), image = COALESCE(?, image), coming_soon = COALESCE(?, coming_soon) WHERE id = ?'
-  ).run(name, stock, price, image, coming_soon !== undefined ? (coming_soon ? 1 : 0) : undefined, id);
+    'UPDATE products SET name = COALESCE(?, name), stock = COALESCE(?, stock), price = COALESCE(?, price), image = COALESCE(?, image), coming_soon = COALESCE(?, coming_soon), collection_url = COALESCE(?, collection_url) WHERE id = ?'
+  ).run(name, stock, price, image, coming_soon !== undefined ? (coming_soon ? 1 : 0) : undefined, collection_url !== undefined ? (collection_url || null) : undefined, id);
 
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
   return NextResponse.json(product);

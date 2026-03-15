@@ -59,6 +59,12 @@ function initDb(db: Database.Database) {
   if (!prodCols.some(c => c.name === 'coming_soon')) {
     db.exec("ALTER TABLE products ADD COLUMN coming_soon INTEGER NOT NULL DEFAULT 0");
   }
+
+  // Migration: add collection_url column if missing
+  const prodCols2 = db.prepare("PRAGMA table_info(products)").all() as { name: string }[];
+  if (!prodCols2.some(c => c.name === 'collection_url')) {
+    db.exec("ALTER TABLE products ADD COLUMN collection_url TEXT");
+  }
 }
 
 export default getDb;

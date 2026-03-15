@@ -10,6 +10,7 @@ interface Product {
   price: number;
   image: string | null;
   coming_soon: number;
+  collection_url: string | null;
 }
 
 function ProductSkeleton() {
@@ -237,6 +238,19 @@ export default function StorePage() {
                                 R$ {total.toFixed(2).replace('.', ',')}
                               </span>
                             </div>
+
+                            {product.collection_url && (
+                              <a
+                                href={product.collection_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 bg-purple-50 border border-purple-200 text-purple-700 font-medium py-2.5 px-4 rounded-xl hover:bg-purple-100 transition-colors text-sm btn-press"
+                              >
+                                <span>🃏</span>
+                                Ver cartas da colecao
+                                <span className="text-purple-400 text-xs">↗</span>
+                              </a>
+                            )}
 
                             <PaymentBlock
                               onCopyPix={copyPix}
