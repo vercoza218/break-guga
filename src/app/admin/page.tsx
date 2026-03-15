@@ -805,6 +805,8 @@ function BattlesTab() {
   useEffect(() => {
     fetchBattles();
     fetchProducts();
+    const interval = setInterval(fetchBattles, 5000);
+    return () => clearInterval(interval);
   }, [fetchBattles, fetchProducts]);
 
   const handleCreate = async (e: FormEvent) => {

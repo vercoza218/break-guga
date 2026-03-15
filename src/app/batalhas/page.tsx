@@ -345,15 +345,34 @@ function BattleCard({
           />
         </div>
 
-        {/* Winner */}
+        {/* Results — winner + other players' cards */}
         {isFinished && winner && (
-          <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-3 text-center">
-            <p className="font-bold text-yellow-700 flex items-center justify-center gap-1">
-              🏆 {winner.player_name}
-            </p>
-            {winner.best_card && (
-              <p className="text-xs text-yellow-600 mt-0.5">{winner.best_card} — R$ {(winner.card_value || 0).toFixed(2).replace('.', ',')}</p>
-            )}
+          <div className="space-y-2">
+            <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-3 text-center">
+              <p className="font-bold text-yellow-700 flex items-center justify-center gap-1">
+                🏆 {winner.player_name}
+              </p>
+              {winner.best_card && (
+                <p className="text-xs text-yellow-600 mt-0.5">{winner.best_card} — R$ {(winner.card_value || 0).toFixed(2).replace('.', ',')}</p>
+              )}
+            </div>
+            {battle.entries
+              .filter((e) => e.id !== winner.id && e.best_card)
+              .map((entry) => (
+                <div key={entry.id} className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center gap-1.5">
+                    {entry.avatar ? (
+                      <img src={entry.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-[10px] font-bold">
+                        {entry.player_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="font-medium text-gray-600">{entry.player_name}</span>
+                  </div>
+                  <span>{entry.best_card} — R$ {(entry.card_value || 0).toFixed(2).replace('.', ',')}</span>
+                </div>
+              ))}
           </div>
         )}
 
