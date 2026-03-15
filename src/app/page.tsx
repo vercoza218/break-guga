@@ -73,6 +73,17 @@ export default function StorePage() {
         <p className="text-gray-500">Escolha seus boosters e participe do break!</p>
       </div>
 
+      {/* Sealed products trust banner */}
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-8 flex gap-3 items-start">
+        <span className="text-2xl shrink-0 mt-0.5">📦</span>
+        <div>
+          <p className="font-semibold text-amber-800 text-sm mb-1">Produto Original e Lacrado</p>
+          <p className="text-amber-700 text-sm leading-relaxed">
+            Todos os boosters sao retirados de produtos lacrados — seja blister unitario, triplo, quadruplo, mini booster box ou booster box.
+          </p>
+        </div>
+      </div>
+
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3].map((i) => <ProductSkeleton key={i} />)}
