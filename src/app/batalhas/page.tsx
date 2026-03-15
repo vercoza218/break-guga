@@ -238,8 +238,13 @@ export default function BatalhasPage() {
             <span>🏅</span> Ranking de Batalhas
           </h3>
           <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-4 md:p-6 space-y-3">
-            <div className="bg-amber-100 border border-amber-300 rounded-xl p-3 text-center text-sm text-amber-700">
-              O ranking reseta todo mes. O <strong>Top 1</strong> do mes e premiado!
+            <div className="bg-amber-100 border border-amber-300 rounded-xl p-4 text-sm text-amber-700 space-y-2">
+              <p className="text-center font-semibold">O ranking reseta todo mes. Os melhores sao premiados!</p>
+              <div className="flex flex-col items-center gap-1 text-amber-800">
+                <span>🥇 <strong>Top 1:</strong> R$ 150,00 em creditos na loja</span>
+                <span>🥈 <strong>Top 2:</strong> R$ 100,00 em creditos na loja</span>
+                <span>🥉 <strong>Top 3:</strong> R$ 50,00 em creditos na loja</span>
+              </div>
             </div>
             {ranking.length > 0 ? (
               <div className="space-y-2">

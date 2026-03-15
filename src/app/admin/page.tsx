@@ -1206,10 +1206,14 @@ function RankingTab() {
   const [newName, setNewName] = useState('');
   const [newWins, setNewWins] = useState('0');
   const [newLosses, setNewLosses] = useState('0');
+  const [newAvatar, setNewAvatar] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editWins, setEditWins] = useState('');
   const [editLosses, setEditLosses] = useState('');
+  const [editAvatar, setEditAvatar] = useState<string | null>(null);
+  const newAvatarRef = useRef<HTMLInputElement>(null);
+  const editAvatarRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const fetchRanking = useCallback(async () => {
@@ -1220,16 +1224,42 @@ function RankingTab() {
 
   useEffect(() => { fetchRanking(); }, [fetchRanking]);
 
+  const uploadAvatar = async (file: File): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (res.ok) {
+      const data = await res.json();
+      return data.url;
+    }
+    return null;
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>, target: 'new' | 'edit') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await uploadAvatar(file);
+    if (url) {
+      if (target === 'new') setNewAvatar(url);
+      else setEditAvatar(url);
+      toast('Foto enviada!');
+    } else {
+      toast('Erro ao enviar foto', 'error');
+    }
+  };
+
   const handleAdd = async () => {
     if (!newName.trim()) return;
     await fetch('/api/battles/ranking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player_name: newName, wins: parseInt(newWins) || 0, losses: parseInt(newLosses) || 0 }),
+      body: JSON.stringify({ player_name: newName, avatar: newAvatar, wins: parseInt(newWins) || 0, losses: parseInt(newLosses) || 0 }),
     });
     setNewName('');
     setNewWins('0');
     setNewLosses('0');
+    setNewAvatar(null);
+    if (newAvatarRef.current) newAvatarRef.current.value = '';
     fetchRanking();
     toast('Jogador adicionado ao ranking!');
   };
@@ -1238,9 +1268,11 @@ function RankingTab() {
     await fetch(`/api/battles/ranking/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player_name: editName, wins: parseInt(editWins) || 0, losses: parseInt(editLosses) || 0 }),
+      body: JSON.stringify({ player_name: editName, avatar: editAvatar, wins: parseInt(editWins) || 0, losses: parseInt(editLosses) || 0 }),
     });
     setEditingId(null);
+    setEditAvatar(null);
+    if (editAvatarRef.current) editAvatarRef.current.value = '';
     fetchRanking();
     toast('Ranking atualizado!');
   };
@@ -1264,6 +1296,7 @@ function RankingTab() {
     setEditName(r.player_name);
     setEditWins(r.wins.toString());
     setEditLosses(r.losses.toString());
+    setEditAvatar(r.avatar);
   };
 
   return (
@@ -1279,6 +1312,20 @@ function RankingTab() {
 
       {/* Add player */}
       <div className="flex gap-2 flex-wrap items-end">
+        <div className="shrink-0">
+          <label className="text-xs text-gray-500 mb-1 block">Foto</label>
+          <div className="flex items-center gap-2">
+            {newAvatar ? (
+              <img src={newAvatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-orange-300" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg">👤</div>
+            )}
+            <button type="button" onClick={() => newAvatarRef.current?.click()} className="bg-gray-100 text-gray-600 text-xs px-2 py-1.5 rounded-lg hover:bg-gray-200 transition-colors">
+              {newAvatar ? 'Trocar' : 'Upload'}
+            </button>
+            <input ref={newAvatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleAvatarChange(e, 'new')} />
+          </div>
+        </div>
         <div className="flex-1 min-w-[120px]">
           <label className="text-xs text-gray-500 mb-1 block">Nome</label>
           <input type="text" placeholder="Nome do jogador" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px] text-sm" />
@@ -1306,6 +1353,15 @@ function RankingTab() {
             </span>
             {editingId === r.id ? (
               <div className="flex-1 flex gap-2 flex-wrap items-center">
+                <div className="flex items-center gap-1 shrink-0">
+                  {editAvatar ? (
+                    <img src={editAvatar} alt="" className="w-8 h-8 rounded-full object-cover border border-orange-300" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">👤</div>
+                  )}
+                  <button type="button" onClick={() => editAvatarRef.current?.click()} className="bg-gray-100 text-gray-500 text-[10px] px-1.5 py-1 rounded hover:bg-gray-200">Foto</button>
+                  <input ref={editAvatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleAvatarChange(e, 'edit')} />
+                </div>
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="flex-1 min-w-[100px] bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" />
                 <input type="number" value={editWins} onChange={(e) => setEditWins(e.target.value)} min={0} className="w-16 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="V" />
                 <input type="number" value={editLosses} onChange={(e) => setEditLosses(e.target.value)} min={0} className="w-16 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="D" />
@@ -1314,6 +1370,11 @@ function RankingTab() {
               </div>
             ) : (
               <>
+                {r.avatar ? (
+                  <img src={r.avatar} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-base shrink-0">👤</div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-800 text-sm">{r.player_name}</p>
                   <p className="text-xs text-gray-500">{r.wins}V {r.losses}D | {(r.wins + r.losses) > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0}% win rate</p>
