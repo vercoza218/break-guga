@@ -13,6 +13,26 @@ interface Product {
   collection_url: string | null;
 }
 
+interface BattleEntry {
+  id: number;
+  player_name: string;
+  best_card: string | null;
+  card_rarity: number | null;
+  card_hp: number | null;
+}
+
+interface Battle {
+  id: number;
+  product_name: string;
+  product_price: number;
+  product_image: string | null;
+  boosters_per_player: number;
+  max_players: number;
+  status: string;
+  winner_entry_id: number | null;
+  entries: BattleEntry[];
+}
+
 function ProductSkeleton() {
   return (
     <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden shadow-sm animate-pulse">
@@ -33,6 +53,7 @@ function ProductSkeleton() {
 
 export default function StorePage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [battles, setBattles] = useState<Battle[]>([]);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -45,11 +66,18 @@ export default function StorePage() {
     setLoading(false);
   }, []);
 
+  const fetchBattles = useCallback(async () => {
+    const res = await fetch('/api/battles');
+    const data = await res.json();
+    setBattles(data.filter((b: Battle) => b.status !== 'finished'));
+  }, []);
+
   useEffect(() => {
     fetchProducts();
-    const interval = setInterval(fetchProducts, 5000);
+    fetchBattles();
+    const interval = setInterval(() => { fetchProducts(); fetchBattles(); }, 5000);
     return () => clearInterval(interval);
-  }, [fetchProducts]);
+  }, [fetchProducts, fetchBattles]);
 
   const setQty = (productId: number, qty: number) => {
     setQuantities((prev) => ({ ...prev, [productId]: qty }));
@@ -269,6 +297,109 @@ export default function StorePage() {
           );
         })}
       </div>
+
+      {/* Active Battles */}
+      {battles.length > 0 && (
+        <div className="mt-10 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="text-2xl">⚔️</span> Batalhas de Booster
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {battles.map((battle) => {
+              const slots = Array.from({ length: battle.max_players }, (_, i) => battle.entries[i] || null);
+              const pricePerPlayer = battle.product_price * battle.boosters_per_player;
+              const winner = battle.entries.find((e) => e.id === battle.winner_entry_id);
+              const isLive = battle.status === 'live';
+              const isOpen = battle.status === 'open';
+
+              return (
+                <div key={battle.id} className={`rounded-2xl border-2 overflow-hidden shadow-sm ${isLive ? 'border-red-400 animate-battle-glow' : 'border-orange-300'}`}>
+                  {/* Battle header */}
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">⚔️</span>
+                      <span className="font-bold text-sm">BATALHA</span>
+                      {isLive && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full animate-urgency-pulse">AO VIVO</span>}
+                    </div>
+                    <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full">
+                      {battle.boosters_per_player} booster(s)
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-4 space-y-3">
+                    {/* Product info */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-18 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
+                        {battle.product_image ? (
+                          <img src={battle.product_image} alt={battle.product_name} className="w-full h-full object-contain" />
+                        ) : (
+                          <span className="text-2xl">🎴</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-800 text-sm truncate">{battle.product_name}</p>
+                        <p className="text-orange-600 font-bold text-base">R$ {pricePerPlayer.toFixed(2).replace('.', ',')} <span className="text-xs font-normal text-gray-400">por jogador</span></p>
+                      </div>
+                    </div>
+
+                    {/* Players slots */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Jogadores</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {slots.map((entry, i) => (
+                          <div key={i} className={`rounded-xl p-2.5 text-center text-sm font-medium border ${
+                            entry
+                              ? winner?.id === entry.id
+                                ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
+                                : 'bg-orange-50 border-orange-200 text-orange-700'
+                              : 'bg-gray-50 border-dashed border-gray-300 text-gray-400'
+                          }`}>
+                            {entry ? (
+                              <div className="flex items-center justify-center gap-1">
+                                {winner?.id === entry.id && <span>🏆</span>}
+                                <span className="truncate">{entry.player_name}</span>
+                              </div>
+                            ) : (
+                              <span>Vaga aberta</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>{battle.entries.length}/{battle.max_players} jogadores</span>
+                        {isOpen && <span className="text-orange-500 font-bold">Vagas abertas!</span>}
+                        {isLive && <span className="text-red-500 font-bold">Ao vivo!</span>}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-500 ${isLive ? 'bg-red-500' : 'bg-orange-500'}`}
+                          style={{ width: `${(battle.entries.length / battle.max_players) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* CTA for open battles */}
+                    {isOpen && (
+                      <a
+                        href={`https://wa.me/5581997492084?text=${encodeURIComponent(`Ola! Quero participar da batalha de ${battle.product_name} (${battle.boosters_per_player} booster(s) por R$ ${pricePerPlayer.toFixed(2)})`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 rounded-xl text-center text-sm transition-colors btn-press"
+                      >
+                        ENTRAR NA BATALHA
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Banner to navigate to Fila */}
       <div className="mt-10 mb-4">

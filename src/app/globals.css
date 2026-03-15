@@ -106,3 +106,17 @@ input, select, textarea {
 .btn-press:active {
   transform: scale(0.95);
 }
+
+/* Battle glow effect for live battles */
+@keyframes battleGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5), 0 0 40px rgba(249, 115, 22, 0.2);
+  }
+}
+
+.animate-battle-glow {
+  animation: battleGlow 2s ease-in-out infinite;
+}

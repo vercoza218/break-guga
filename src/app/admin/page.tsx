@@ -29,7 +29,7 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history' | 'battles'>('products');
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -102,6 +102,16 @@ export default function AdminPage() {
           Fila de Abertura
         </button>
         <button
+          onClick={() => setActiveTab('battles')}
+          className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
+            activeTab === 'battles'
+              ? 'text-orange-500 border-b-2 border-orange-500'
+              : 'text-gray-400'
+          }`}
+        >
+          Batalhas
+        </button>
+        <button
           onClick={() => setActiveTab('history')}
           className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
             activeTab === 'history'
@@ -137,6 +147,16 @@ export default function AdminPage() {
             Fila de Abertura
           </button>
           <button
+            onClick={() => setActiveTab('battles')}
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+              activeTab === 'battles'
+                ? 'bg-orange-500 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Batalhas
+          </button>
+          <button
             onClick={() => setActiveTab('history')}
             className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
               activeTab === 'history'
@@ -153,6 +173,7 @@ export default function AdminPage() {
       <div className="flex-1 min-w-0">
         {activeTab === 'products' && <ProductsTab />}
         {activeTab === 'queue' && <QueueTab />}
+        {activeTab === 'battles' && <BattlesTab />}
         {activeTab === 'history' && <HistoryTab />}
       </div>
     </div>
@@ -726,6 +747,334 @@ function QueueTab() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* =================== BATTLES TAB =================== */
+
+const RARITY_OPTIONS = [
+  { value: 6, label: 'Illustration Rare / Special Art' },
+  { value: 5, label: 'Ultra Rare / Full Art' },
+  { value: 4, label: 'Holo Rare' },
+  { value: 3, label: 'Rare' },
+  { value: 2, label: 'Uncommon' },
+  { value: 1, label: 'Common' },
+];
+
+interface BattleEntry {
+  id: number;
+  battle_id: number;
+  player_name: string;
+  best_card: string | null;
+  card_rarity: number | null;
+  card_hp: number | null;
+}
+
+interface Battle {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_price: number;
+  product_image: string | null;
+  boosters_per_player: number;
+  max_players: number;
+  status: string;
+  winner_entry_id: number | null;
+  entries: BattleEntry[];
+}
+
+function BattlesTab() {
+  const [battles, setBattles] = useState<Battle[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productId, setProductId] = useState('');
+  const [boostersPerPlayer, setBoostersPerPlayer] = useState('1');
+  const [maxPlayers, setMaxPlayers] = useState('2');
+  const [playerName, setPlayerName] = useState('');
+  const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const fetchBattles = useCallback(async () => {
+    const res = await fetch('/api/battles');
+    const data = await res.json();
+    setBattles(data);
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    const res = await fetch('/api/products');
+    const data = await res.json();
+    setProducts(data);
+  }, []);
+
+  useEffect(() => {
+    fetchBattles();
+    fetchProducts();
+  }, [fetchBattles, fetchProducts]);
+
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/battles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: parseInt(productId),
+        boosters_per_player: parseInt(boostersPerPlayer),
+        max_players: parseInt(maxPlayers),
+      }),
+    });
+    setProductId('');
+    setBoostersPerPlayer('1');
+    setMaxPlayers('2');
+    fetchBattles();
+    toast('Batalha criada!');
+  };
+
+  const handleJoin = async (battleId: number) => {
+    if (!playerName.trim()) return;
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'join', player_name: playerName }),
+    });
+    setPlayerName('');
+    setJoiningBattleId(null);
+    fetchBattles();
+    toast('Jogador adicionado!');
+  };
+
+  const handleSetStatus = async (battleId: number, status: string) => {
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    fetchBattles();
+    toast(status === 'live' ? 'Batalha ao vivo!' : `Status: ${status}`);
+  };
+
+  const handleRegisterCard = async (battleId: number, entryId: number, bestCard: string, cardRarity: number, cardHp: number) => {
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'register_card', entry_id: entryId, best_card: bestCard, card_rarity: cardRarity, card_hp: cardHp }),
+    });
+    fetchBattles();
+    toast('Carta registrada!');
+  };
+
+  const handleFinish = async (battleId: number) => {
+    const res = await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'finish' }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      toast(data.error || 'Erro ao finalizar', 'error');
+      return;
+    }
+    fetchBattles();
+    toast('Batalha finalizada! Vencedor definido!');
+  };
+
+  const handleDelete = async (battleId: number) => {
+    if (!confirm('Excluir esta batalha?')) return;
+    await fetch(`/api/battles/${battleId}`, { method: 'DELETE' });
+    fetchBattles();
+    toast('Batalha excluida', 'info');
+  };
+
+  const statusLabel = (s: string) => {
+    switch (s) {
+      case 'open': return 'Aberta';
+      case 'ready': return 'Pronta';
+      case 'live': return 'Ao Vivo';
+      case 'finished': return 'Finalizada';
+      default: return s;
+    }
+  };
+
+  const statusColor = (s: string) => {
+    switch (s) {
+      case 'open': return 'bg-blue-100 text-blue-600';
+      case 'ready': return 'bg-amber-100 text-amber-600';
+      case 'live': return 'bg-red-100 text-red-600';
+      case 'finished': return 'bg-green-100 text-green-600';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  const rarityLabel = (val: number) => RARITY_OPTIONS.find((r) => r.value === val)?.label || '';
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-bold text-orange-500">Criar Batalha</h3>
+
+      <form onSubmit={handleCreate} className="bg-white border border-orange-200 rounded-2xl p-4 md:p-6 space-y-4 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <select
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            required
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
+          >
+            <option value="">Selecione o produto</option>
+            {products.filter(p => !p.coming_soon && p.stock > 0).map((p) => (
+              <option key={p.id} value={p.id}>{p.name} (R$ {p.price.toFixed(2)})</option>
+            ))}
+          </select>
+          <input
+            type="number"
+            placeholder="Boosters por jogador"
+            value={boostersPerPlayer}
+            onChange={(e) => setBoostersPerPlayer(e.target.value)}
+            required min={1}
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
+          />
+          <input
+            type="number"
+            placeholder="Num. jogadores"
+            value={maxPlayers}
+            onChange={(e) => setMaxPlayers(e.target.value)}
+            required min={2} max={8}
+            className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
+          />
+        </div>
+        <button type="submit" className="w-full md:w-auto bg-orange-500 text-white font-bold px-8 py-3 rounded-xl hover:bg-orange-600 transition-colors min-h-[44px]">
+          Criar Batalha
+        </button>
+      </form>
+
+      <h3 className="text-lg font-bold text-orange-500">Batalhas</h3>
+
+      {battles.length === 0 && <p className="text-gray-400">Nenhuma batalha criada.</p>}
+
+      <div className="space-y-4">
+        {battles.map((battle) => {
+          const winner = battle.entries.find((e) => e.id === battle.winner_entry_id);
+          return (
+            <div key={battle.id} className="bg-white border border-orange-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
+              {/* Header */}
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                {battle.product_image && (
+                  <img src={battle.product_image} alt="" className="w-12 h-16 rounded-xl object-contain bg-gray-50 shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-bold text-gray-800">{battle.product_name}</p>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(battle.status)}`}>
+                      {statusLabel(battle.status)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {battle.boosters_per_player} booster(s) por jogador | {battle.entries.length}/{battle.max_players} jogadores | R$ {(battle.product_price * battle.boosters_per_player).toFixed(2)} por jogador
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0 flex-wrap">
+                  {battle.status === 'ready' && (
+                    <button onClick={() => handleSetStatus(battle.id, 'live')} className="bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-600 transition-colors min-h-[44px]">
+                      Iniciar Ao Vivo
+                    </button>
+                  )}
+                  {battle.status === 'live' && (
+                    <button onClick={() => handleFinish(battle.id)} className="bg-green-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-green-600 transition-colors min-h-[44px]">
+                      Finalizar
+                    </button>
+                  )}
+                  <button onClick={() => handleDelete(battle.id)} className="bg-red-100 text-red-500 text-sm font-bold px-3 py-2 rounded-xl hover:bg-red-200 transition-colors min-h-[44px]">
+                    Excluir
+                  </button>
+                </div>
+              </div>
+
+              {/* Players */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-600">Jogadores:</p>
+                {battle.entries.map((entry) => (
+                  <div key={entry.id} className={`flex flex-col md:flex-row md:items-center gap-2 p-3 rounded-xl border ${winner?.id === entry.id ? 'bg-yellow-50 border-yellow-300' : 'bg-gray-50 border-gray-200'}`}>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {winner?.id === entry.id && <span className="text-lg">🏆</span>}
+                      <span className="font-bold text-gray-800">{entry.player_name}</span>
+                    </div>
+                    {entry.best_card ? (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">{entry.best_card}</span>
+                        <span className="text-gray-400 mx-1">|</span>
+                        <span>{rarityLabel(entry.card_rarity || 0)}</span>
+                        <span className="text-gray-400 mx-1">|</span>
+                        <span>{entry.card_hp} HP</span>
+                      </div>
+                    ) : battle.status === 'live' ? (
+                      <CardRegistrationForm battleId={battle.id} entryId={entry.id} onRegister={handleRegisterCard} />
+                    ) : (
+                      <span className="text-xs text-gray-400">Aguardando...</span>
+                    )}
+                  </div>
+                ))}
+
+                {/* Add player */}
+                {battle.status === 'open' && battle.entries.length < battle.max_players && (
+                  <div className="flex gap-2 mt-2">
+                    {joiningBattleId === battle.id ? (
+                      <>
+                        <input
+                          type="text"
+                          placeholder="Nome do jogador"
+                          value={playerName}
+                          onChange={(e) => setPlayerName(e.target.value)}
+                          className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleJoin(battle.id); } }}
+                        />
+                        <button onClick={() => handleJoin(battle.id)} className="bg-orange-500 text-white font-bold px-4 py-2 rounded-xl hover:bg-orange-600 transition-colors min-h-[44px] text-sm">
+                          Adicionar
+                        </button>
+                        <button onClick={() => { setJoiningBattleId(null); setPlayerName(''); }} className="bg-gray-200 text-gray-600 px-3 py-2 rounded-xl hover:bg-gray-300 transition-colors min-h-[44px] text-sm">
+                          ✕
+                        </button>
+                      </>
+                    ) : (
+                      <button onClick={() => setJoiningBattleId(battle.id)} className="bg-orange-100 text-orange-600 font-bold px-4 py-2 rounded-xl hover:bg-orange-200 transition-colors min-h-[44px] text-sm">
+                        + Adicionar Jogador
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Winner announcement */}
+              {battle.status === 'finished' && winner && (
+                <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-center">
+                  <p className="text-lg font-bold text-yellow-700">🏆 Vencedor: {winner.player_name}</p>
+                  <p className="text-sm text-yellow-600">{winner.best_card} — {rarityLabel(winner.card_rarity || 0)} ({winner.card_hp} HP)</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CardRegistrationForm({ battleId, entryId, onRegister }: { battleId: number; entryId: number; onRegister: (bId: number, eId: number, card: string, rarity: number, hp: number) => void }) {
+  const [cardName, setCardName] = useState('');
+  const [rarity, setRarity] = useState('');
+  const [hp, setHp] = useState('');
+
+  return (
+    <div className="flex flex-col md:flex-row gap-2">
+      <input type="text" placeholder="Nome da carta" value={cardName} onChange={(e) => setCardName(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-full md:w-36" />
+      <select value={rarity} onChange={(e) => setRarity(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px]">
+        <option value="">Raridade</option>
+        {RARITY_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+      </select>
+      <input type="number" placeholder="HP" value={hp} onChange={(e) => setHp(e.target.value)} min={0} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-20" />
+      <button
+        onClick={() => { if (cardName && rarity && hp) onRegister(battleId, entryId, cardName, parseInt(rarity), parseInt(hp)); }}
+        className="bg-orange-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-orange-600 transition-colors text-sm min-h-[36px] whitespace-nowrap"
+      >
+        Registrar
+      </button>
     </div>
   );
 }

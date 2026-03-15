@@ -65,6 +65,31 @@ function initDb(db: Database.Database) {
   if (!prodCols2.some(c => c.name === 'collection_url')) {
     db.exec("ALTER TABLE products ADD COLUMN collection_url TEXT");
   }
+
+  // Battles system
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS battles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      boosters_per_player INTEGER NOT NULL DEFAULT 1,
+      max_players INTEGER NOT NULL DEFAULT 2,
+      status TEXT NOT NULL DEFAULT 'open',
+      winner_entry_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS battle_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      battle_id INTEGER NOT NULL,
+      player_name TEXT NOT NULL,
+      best_card TEXT,
+      card_rarity INTEGER,
+      card_hp INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (battle_id) REFERENCES battles(id) ON DELETE CASCADE
+    );
+  `);
 }
 
 export default getDb;
