@@ -1119,14 +1119,12 @@ function BattlesTab() {
                               </>
                             )}
                           </div>
-                          {battle.status === 'finished' && (
-                            <label className="cursor-pointer shrink-0">
-                              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadCardImage(battle.id, entry.id, f); }} />
-                              <span className="bg-blue-100 text-blue-600 text-xs font-bold px-2 py-1 rounded-lg hover:bg-blue-200 transition-colors">
-                                {entry.card_image ? 'Trocar foto' : 'Foto carta'}
-                              </span>
-                            </label>
-                          )}
+                          <label className="cursor-pointer shrink-0">
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadCardImage(battle.id, entry.id, f); }} />
+                            <span className="bg-blue-100 text-blue-600 text-xs font-bold px-2 py-1 rounded-lg hover:bg-blue-200 transition-colors">
+                              {entry.card_image ? 'Trocar foto' : 'Foto carta'}
+                            </span>
+                          </label>
                         </div>
                       ) : battle.status === 'live' ? (
                         <CardRegistrationForm battleId={battle.id} entryId={entry.id} onRegister={handleRegisterCard} />
@@ -1177,6 +1175,137 @@ function BattlesTab() {
           );
         })}
       </div>
+
+      {/* Ranking Management */}
+      <RankingManager />
+    </div>
+  );
+}
+
+function RankingManager() {
+  const [ranking, setRanking] = useState<{ id: number; player_name: string; avatar: string | null; wins: number; losses: number }[]>([]);
+  const [newName, setNewName] = useState('');
+  const [newWins, setNewWins] = useState('0');
+  const [newLosses, setNewLosses] = useState('0');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editWins, setEditWins] = useState('');
+  const [editLosses, setEditLosses] = useState('');
+  const { toast } = useToast();
+
+  const fetchRanking = useCallback(async () => {
+    const res = await fetch('/api/battles/ranking');
+    const data = await res.json();
+    setRanking(data);
+  }, []);
+
+  useEffect(() => { fetchRanking(); }, [fetchRanking]);
+
+  const handleAdd = async () => {
+    if (!newName.trim()) return;
+    await fetch('/api/battles/ranking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: newName, wins: parseInt(newWins) || 0, losses: parseInt(newLosses) || 0 }),
+    });
+    setNewName('');
+    setNewWins('0');
+    setNewLosses('0');
+    fetchRanking();
+    toast('Jogador adicionado ao ranking!');
+  };
+
+  const handleUpdate = async (id: number) => {
+    await fetch(`/api/battles/ranking/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: editName, wins: parseInt(editWins) || 0, losses: parseInt(editLosses) || 0 }),
+    });
+    setEditingId(null);
+    fetchRanking();
+    toast('Ranking atualizado!');
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Remover do ranking?')) return;
+    await fetch(`/api/battles/ranking/${id}`, { method: 'DELETE' });
+    fetchRanking();
+    toast('Removido do ranking', 'info');
+  };
+
+  const handleResetAll = async () => {
+    if (!confirm('Resetar todo o ranking? Esta acao nao pode ser desfeita.')) return;
+    await fetch('/api/battles/ranking', { method: 'DELETE' });
+    fetchRanking();
+    toast('Ranking resetado!', 'info');
+  };
+
+  const startEdit = (r: typeof ranking[0]) => {
+    setEditingId(r.id);
+    setEditName(r.player_name);
+    setEditWins(r.wins.toString());
+    setEditLosses(r.losses.toString());
+  };
+
+  return (
+    <div className="space-y-4 border-t border-orange-200 pt-6 mt-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-orange-500">Ranking de Batalhas</h3>
+        {ranking.length > 0 && (
+          <button onClick={handleResetAll} className="bg-red-100 text-red-500 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors">
+            Resetar Ranking
+          </button>
+        )}
+      </div>
+
+      {/* Add player */}
+      <div className="flex gap-2 flex-wrap items-end">
+        <div className="flex-1 min-w-[120px]">
+          <label className="text-xs text-gray-500 mb-1 block">Nome</label>
+          <input type="text" placeholder="Nome do jogador" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px] text-sm" />
+        </div>
+        <div className="w-20">
+          <label className="text-xs text-gray-500 mb-1 block">Vitorias</label>
+          <input type="number" value={newWins} onChange={(e) => setNewWins(e.target.value)} min={0} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px] text-sm" />
+        </div>
+        <div className="w-20">
+          <label className="text-xs text-gray-500 mb-1 block">Derrotas</label>
+          <input type="number" value={newLosses} onChange={(e) => setNewLosses(e.target.value)} min={0} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px] text-sm" />
+        </div>
+        <button onClick={handleAdd} className="bg-orange-500 text-white font-bold px-4 py-2 rounded-xl hover:bg-orange-600 transition-colors min-h-[40px] text-sm">
+          Adicionar
+        </button>
+      </div>
+
+      {/* Ranking list */}
+      {ranking.length === 0 && <p className="text-gray-400 text-sm">Nenhum jogador no ranking.</p>}
+      <div className="space-y-2">
+        {ranking.map((r, i) => (
+          <div key={r.id} className={`flex items-center gap-3 p-3 rounded-xl border ${i === 0 ? 'bg-yellow-50 border-yellow-300' : 'bg-gray-50 border-gray-200'}`}>
+            <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              {i + 1}
+            </span>
+            {editingId === r.id ? (
+              <div className="flex-1 flex gap-2 flex-wrap items-center">
+                <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="flex-1 min-w-[100px] bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" />
+                <input type="number" value={editWins} onChange={(e) => setEditWins(e.target.value)} min={0} className="w-16 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="V" />
+                <input type="number" value={editLosses} onChange={(e) => setEditLosses(e.target.value)} min={0} className="w-16 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="D" />
+                <button onClick={() => handleUpdate(r.id)} className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-green-600 transition-colors">Salvar</button>
+                <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg hover:bg-gray-300 transition-colors">✕</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 text-sm">{r.player_name}</p>
+                  <p className="text-xs text-gray-500">{r.wins}V {r.losses}D | {(r.wins + r.losses) > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0}% win rate</p>
+                </div>
+                <button onClick={() => startEdit(r)} className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-lg hover:bg-primary/20 transition-colors">Editar</button>
+                <button onClick={() => handleDelete(r.id)} className="bg-red-100 text-red-500 text-xs font-bold px-2 py-1 rounded-lg hover:bg-red-200 transition-colors">Excluir</button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1189,8 +1318,8 @@ function CardRegistrationForm({ battleId, entryId, onRegister }: { battleId: num
   return (
     <div className="flex flex-col md:flex-row gap-2">
       <input type="text" placeholder="Nome da carta" value={cardName} onChange={(e) => setCardName(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-full md:w-36" />
-      <input type="number" placeholder="Valor R$" value={cardValue} onChange={(e) => setCardValue(e.target.value)} min={0} step="0.01" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
-      <input type="number" placeholder="2a carta R$" value={cardValue2} onChange={(e) => setCardValue2(e.target.value)} min={0} step="0.01" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
+      <input type="number" placeholder="Valor NM R$" value={cardValue} onChange={(e) => setCardValue(e.target.value)} min={0} step="0.01" title="Menor preco PT-BR Near Mint na Liga Pokemon" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
+      <input type="number" placeholder="2a carta R$" value={cardValue2} onChange={(e) => setCardValue2(e.target.value)} min={0} step="0.01" title="Segunda carta mais cara (NM PT-BR)" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
       <button
         onClick={() => { if (cardName && cardValue) onRegister(battleId, entryId, cardName, parseFloat(cardValue), parseFloat(cardValue2 || '0')); }}
         className="bg-orange-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-orange-600 transition-colors text-sm min-h-[36px] whitespace-nowrap"

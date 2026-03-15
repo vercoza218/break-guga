@@ -120,6 +120,18 @@ function initDb(db: Database.Database) {
   if (!beCols2.some(c => c.name === 'card_image')) {
     db.exec("ALTER TABLE battle_entries ADD COLUMN card_image TEXT");
   }
+
+  // Battle ranking (manually managed by admin)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS battle_ranking (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_name TEXT NOT NULL,
+      avatar TEXT,
+      wins INTEGER NOT NULL DEFAULT 0,
+      losses INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 }
 
 export default getDb;

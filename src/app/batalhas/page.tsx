@@ -143,7 +143,7 @@ export default function BatalhasPage() {
           <ol className="list-decimal list-inside space-y-1.5">
             <li>Cada jogador compra a mesma quantidade de boosters da mesma colecao.</li>
             <li>Os boosters sao abertos ao vivo na live.</li>
-            <li>A <strong>carta mais valiosa</strong> de cada jogador e registrada (menor preco da Liga Pokemon no momento da live).</li>
+            <li>A <strong>carta mais valiosa</strong> de cada jogador e registrada (menor preco PT-BR Near Mint (NM) da Liga Pokemon no momento da live).</li>
             <li>O jogador com a carta de <strong>maior valor</strong> vence e leva todas as cartas.</li>
             <li>Em caso de empate, vence quem tiver a <strong>segunda carta mais cara</strong>.</li>
           </ol>
@@ -232,7 +232,7 @@ export default function BatalhasPage() {
       )}
 
       {/* Ranking */}
-      {!loading && ranking.length > 0 && (
+      {!loading && (
         <div className="mb-10">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>🏅</span> Ranking de Batalhas
@@ -241,44 +241,50 @@ export default function BatalhasPage() {
             <div className="bg-amber-100 border border-amber-300 rounded-xl p-3 text-center text-sm text-amber-700">
               O ranking reseta todo mes. O <strong>Top 1</strong> do mes e premiado!
             </div>
-            <div className="space-y-2">
-              {ranking.map((player, i) => (
-                <div key={player.player_name} className={`flex items-center gap-3 p-3 rounded-xl border ${
-                  i === 0 ? 'bg-yellow-50 border-yellow-300' : i === 1 ? 'bg-gray-50 border-gray-300' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-200'
-                }`}>
-                  {/* Position */}
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                    i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-500'
+            {ranking.length > 0 ? (
+              <div className="space-y-2">
+                {ranking.map((player, i) => (
+                  <div key={player.player_name} className={`flex items-center gap-3 p-3 rounded-xl border ${
+                    i === 0 ? 'bg-yellow-50 border-yellow-300' : i === 1 ? 'bg-gray-50 border-gray-300' : i === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-gray-200'
                   }`}>
-                    {i + 1}
-                  </div>
-                  {/* Avatar */}
-                  {player.avatar ? (
-                    <img src={player.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-bold text-sm shrink-0">
-                      {player.player_name.charAt(0).toUpperCase()}
+                    {/* Position */}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                      i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {i + 1}
                     </div>
-                  )}
-                  {/* Name + stats */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-800 text-sm truncate flex items-center gap-1">
-                      {i === 0 && '🥇'}{i === 1 && '🥈'}{i === 2 && '🥉'} {player.player_name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {player.total} batalha{player.total !== 1 ? 's' : ''} | {player.wins}V {player.losses}D
-                    </p>
+                    {/* Avatar */}
+                    {player.avatar ? (
+                      <img src={player.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-bold text-sm shrink-0">
+                        {player.player_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {/* Name + stats */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-800 text-sm truncate flex items-center gap-1">
+                        {i === 0 && '🥇'}{i === 1 && '🥈'}{i === 2 && '🥉'} {player.player_name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {player.total} batalha{player.total !== 1 ? 's' : ''} | {player.wins}V {player.losses}D
+                      </p>
+                    </div>
+                    {/* Win rate */}
+                    <div className="text-right shrink-0">
+                      <p className={`font-bold text-sm ${player.win_rate >= 50 ? 'text-green-600' : 'text-gray-500'}`}>
+                        {player.win_rate}%
+                      </p>
+                      <p className="text-[10px] text-gray-400 uppercase">win rate</p>
+                    </div>
                   </div>
-                  {/* Win rate */}
-                  <div className="text-right shrink-0">
-                    <p className={`font-bold text-sm ${player.win_rate >= 50 ? 'text-green-600' : 'text-gray-500'}`}>
-                      {player.win_rate}%
-                    </p>
-                    <p className="text-[10px] text-gray-400 uppercase">win rate</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-400 text-sm">
+                Nenhum jogador no ranking ainda.
+              </div>
+            )}
           </div>
         </div>
       )}
