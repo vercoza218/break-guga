@@ -428,7 +428,7 @@ function BattleCard({
           {isFinished && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full">ENCERRADA</span>}
         </div>
         <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full">
-          {battle.boosters_per_player} booster(s)
+          {battle.boosters_per_player * battle.max_players} boosters ({battle.boosters_per_player} cada)
         </span>
       </div>
 
