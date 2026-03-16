@@ -132,6 +132,15 @@ function initDb(db: Database.Database) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migration: add best_card_name and best_card_value to battle_ranking
+  const brCols = db.prepare("PRAGMA table_info(battle_ranking)").all() as { name: string }[];
+  if (!brCols.some(c => c.name === 'best_card_name')) {
+    db.exec("ALTER TABLE battle_ranking ADD COLUMN best_card_name TEXT");
+  }
+  if (!brCols.some(c => c.name === 'best_card_value')) {
+    db.exec("ALTER TABLE battle_ranking ADD COLUMN best_card_value REAL DEFAULT 0");
+  }
 }
 
 export default getDb;

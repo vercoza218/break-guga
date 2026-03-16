@@ -975,6 +975,21 @@ function BattlesTab() {
     toast('Foto da carta enviada!');
   };
 
+  const handleUploadAvatar = async (battleId: number, entryId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file, 'avatar.png');
+    const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!uploadRes.ok) { toast('Erro ao enviar foto', 'error'); return; }
+    const { url } = await uploadRes.json();
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set_avatar', entry_id: entryId, avatar: url }),
+    });
+    fetchBattles();
+    toast('Foto do jogador atualizada!');
+  };
+
   const handleDelete = async (battleId: number) => {
     if (!confirm('Excluir esta batalha?')) return;
     await fetch(`/api/battles/${battleId}`, { method: 'DELETE' });
@@ -1138,13 +1153,19 @@ function BattlesTab() {
                 {battle.entries.map((entry) => (
                   <div key={entry.id} className={`flex flex-col md:flex-row md:items-center gap-2 p-3 rounded-xl border ${winner?.id === entry.id ? 'bg-yellow-50 border-yellow-300' : 'bg-gray-50 border-gray-200'}`}>
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {entry.avatar ? (
-                        <img src={entry.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 text-sm font-bold shrink-0">
-                          {entry.player_name.charAt(0).toUpperCase()}
+                      <label className="cursor-pointer shrink-0 relative group">
+                        {entry.avatar ? (
+                          <img src={entry.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 text-sm font-bold">
+                            {entry.player_name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-white text-[8px]">📷</span>
                         </div>
-                      )}
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadAvatar(battle.id, entry.id, f); }} />
+                      </label>
                       {winner?.id === entry.id && <span className="text-lg">🏆</span>}
                       <span className="font-bold text-gray-800">{entry.player_name}</span>
                       {battle.creator_entry_id === entry.id && (
@@ -1264,16 +1285,20 @@ function BattlesTab() {
 }
 
 function RankingTab() {
-  const [ranking, setRanking] = useState<{ id: number; player_name: string; avatar: string | null; wins: number; losses: number }[]>([]);
+  const [ranking, setRanking] = useState<{ id: number; player_name: string; avatar: string | null; wins: number; losses: number; best_card_name: string | null; best_card_value: number }[]>([]);
   const [newName, setNewName] = useState('');
   const [newWins, setNewWins] = useState('0');
   const [newLosses, setNewLosses] = useState('0');
   const [newAvatar, setNewAvatar] = useState<string | null>(null);
+  const [newCardName, setNewCardName] = useState('');
+  const [newCardValue, setNewCardValue] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editWins, setEditWins] = useState('');
   const [editLosses, setEditLosses] = useState('');
   const [editAvatar, setEditAvatar] = useState<string | null>(null);
+  const [editCardName, setEditCardName] = useState('');
+  const [editCardValue, setEditCardValue] = useState('');
   const newAvatarRef = useRef<HTMLInputElement>(null);
   const editAvatarRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -1315,12 +1340,14 @@ function RankingTab() {
     await fetch('/api/battles/ranking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player_name: newName, avatar: newAvatar, wins: parseInt(newWins) || 0, losses: parseInt(newLosses) || 0 }),
+      body: JSON.stringify({ player_name: newName, avatar: newAvatar, wins: parseInt(newWins) || 0, losses: parseInt(newLosses) || 0, best_card_name: newCardName || null, best_card_value: parseFloat(newCardValue) || 0 }),
     });
     setNewName('');
     setNewWins('0');
     setNewLosses('0');
     setNewAvatar(null);
+    setNewCardName('');
+    setNewCardValue('');
     if (newAvatarRef.current) newAvatarRef.current.value = '';
     fetchRanking();
     toast('Jogador adicionado ao ranking!');
@@ -1330,7 +1357,7 @@ function RankingTab() {
     await fetch(`/api/battles/ranking/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player_name: editName, avatar: editAvatar, wins: parseInt(editWins) || 0, losses: parseInt(editLosses) || 0 }),
+      body: JSON.stringify({ player_name: editName, avatar: editAvatar, wins: parseInt(editWins) || 0, losses: parseInt(editLosses) || 0, best_card_name: editCardName || null, best_card_value: parseFloat(editCardValue) || 0 }),
     });
     setEditingId(null);
     setEditAvatar(null);
@@ -1359,6 +1386,8 @@ function RankingTab() {
     setEditWins(r.wins.toString());
     setEditLosses(r.losses.toString());
     setEditAvatar(r.avatar);
+    setEditCardName(r.best_card_name || '');
+    setEditCardValue(r.best_card_value ? r.best_card_value.toString() : '');
   };
 
   return (
@@ -1400,6 +1429,14 @@ function RankingTab() {
           <label className="text-xs text-gray-500 mb-1 block">Derrotas</label>
           <input type="number" value={newLosses} onChange={(e) => setNewLosses(e.target.value)} min={0} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px] text-sm" />
         </div>
+        <div className="flex-1 min-w-[120px]">
+          <label className="text-xs text-gray-500 mb-1 block">Carta mais cara</label>
+          <input type="text" placeholder="Nome da carta" value={newCardName} onChange={(e) => setNewCardName(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px] text-sm" />
+        </div>
+        <div className="w-24">
+          <label className="text-xs text-gray-500 mb-1 block">Valor R$</label>
+          <input type="number" placeholder="0.00" value={newCardValue} onChange={(e) => setNewCardValue(e.target.value)} min={0} step="0.01" className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px] text-sm" />
+        </div>
         <button onClick={handleAdd} className="bg-orange-500 text-white font-bold px-4 py-2 rounded-xl hover:bg-orange-600 transition-colors min-h-[40px] text-sm">
           Adicionar
         </button>
@@ -1427,6 +1464,8 @@ function RankingTab() {
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="flex-1 min-w-[100px] bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" />
                 <input type="number" value={editWins} onChange={(e) => setEditWins(e.target.value)} min={0} className="w-16 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="V" />
                 <input type="number" value={editLosses} onChange={(e) => setEditLosses(e.target.value)} min={0} className="w-16 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="D" />
+                <input type="text" value={editCardName} onChange={(e) => setEditCardName(e.target.value)} className="flex-1 min-w-[80px] bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="Carta" />
+                <input type="number" value={editCardValue} onChange={(e) => setEditCardValue(e.target.value)} min={0} step="0.01" className="w-20 bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="R$" />
                 <button onClick={() => handleUpdate(r.id)} className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-green-600 transition-colors">Salvar</button>
                 <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg hover:bg-gray-300 transition-colors">✕</button>
               </div>
@@ -1439,7 +1478,10 @@ function RankingTab() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-800 text-sm">{r.player_name}</p>
-                  <p className="text-xs text-gray-500">{r.wins}V {r.losses}D | {(r.wins + r.losses) > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0}% win rate</p>
+                  <p className="text-xs text-gray-500">
+                    {r.wins}V {r.losses}D | {(r.wins + r.losses) > 0 ? Math.round((r.wins / (r.wins + r.losses)) * 100) : 0}% win rate
+                    {r.best_card_name && <span className="ml-1 text-orange-500">| 🃏 {r.best_card_name} R$ {(r.best_card_value || 0).toFixed(2)}</span>}
+                  </p>
                 </div>
                 <button onClick={() => startEdit(r)} className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-lg hover:bg-primary/20 transition-colors">Editar</button>
                 <button onClick={() => handleDelete(r.id)} className="bg-red-100 text-red-500 text-xs font-bold px-2 py-1 rounded-lg hover:bg-red-200 transition-colors">Excluir</button>

@@ -5,11 +5,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   const db = getDb();
   const id = params.id;
   const body = await request.json();
-  const { player_name, avatar, wins, losses } = body;
+  const { player_name, avatar, wins, losses, best_card_name, best_card_value } = body;
 
   db.prepare(
-    'UPDATE battle_ranking SET player_name = ?, avatar = ?, wins = ?, losses = ? WHERE id = ?'
-  ).run(player_name, avatar || null, wins || 0, losses || 0, id);
+    'UPDATE battle_ranking SET player_name = ?, avatar = ?, wins = ?, losses = ?, best_card_name = ?, best_card_value = ? WHERE id = ?'
+  ).run(player_name, avatar || null, wins || 0, losses || 0, best_card_name || null, best_card_value || 0, id);
 
   const entry = db.prepare('SELECT * FROM battle_ranking WHERE id = ?').get(id);
   return NextResponse.json(entry);

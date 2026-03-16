@@ -133,6 +133,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(battle);
   }
 
+  // Update player avatar
+  if (body.action === 'set_avatar') {
+    const { entry_id, avatar } = body;
+    db.prepare(
+      'UPDATE battle_entries SET avatar = ? WHERE id = ? AND battle_id = ?'
+    ).run(avatar, entry_id, id);
+    const entry = db.prepare('SELECT * FROM battle_entries WHERE id = ?').get(entry_id);
+    return NextResponse.json(entry);
+  }
+
   // Upload card image for an entry
   if (body.action === 'set_card_image') {
     const { entry_id, card_image } = body;

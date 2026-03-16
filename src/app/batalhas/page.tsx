@@ -35,6 +35,8 @@ interface RankingPlayer {
   wins: number;
   losses: number;
   win_rate: number;
+  best_card_name: string | null;
+  best_card_value: number;
 }
 
 export default function BatalhasPage() {
@@ -277,6 +279,7 @@ export default function BatalhasPage() {
                 </div>
               </div>
               <p className="text-center text-xs text-amber-600">Creditos em produtos na loja • Ranking reseta todo mes</p>
+              <p className="text-center text-[10px] text-amber-500 mt-1">Desempate: quem tirou a carta mais cara na temporada fica na frente</p>
             </div>
 
             {ranking.length > 0 ? (
@@ -325,6 +328,11 @@ export default function BatalhasPage() {
                       <p className="text-xs text-gray-500">
                         {player.total} batalha{player.total !== 1 ? 's' : ''} | {player.wins}V {player.losses}D
                       </p>
+                      {player.best_card_name && (
+                        <p className="text-[10px] text-orange-500 truncate">
+                          🃏 {player.best_card_name} — R$ {player.best_card_value.toFixed(2).replace('.', ',')}
+                        </p>
+                      )}
                     </div>
                     {/* Win rate */}
                     <div className="text-right shrink-0">
