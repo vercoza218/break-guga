@@ -23,6 +23,7 @@ interface Battle {
   max_players: number;
   status: string;
   title: string | null;
+  battle_date: string | null;
   winner_entry_id: number | null;
   creator_entry_id: number | null;
   entries: BattleEntry[];
@@ -107,13 +108,32 @@ export default function BatalhasPage() {
     fetchBattles();
     toast('Voce entrou na batalha! Envie o comprovante.');
     setJustActedBattle({ battleId, playerName });
+    // Remember player name for "you" highlighting
+    try { localStorage.setItem('gugaopkmn_player', playerName); } catch {}
     setJoinName('');
     setJoinAvatar(null);
   };
 
   const openBattles = battles.filter((b) => b.status === 'open');
   const liveBattles = battles.filter((b) => b.status === 'live' || b.status === 'ready');
-  const finishedBattles = battles.filter((b) => b.status === 'finished').slice(0, 6);
+  const finishedBattles = battles.filter((b) => b.status === 'finished');
+
+  // Get stored player name for "you" highlighting
+  let myName = '';
+  try { myName = localStorage.getItem('gugaopkmn_player') || ''; } catch {}
+
+  // Group finished battles by date
+  const finishedByDate: Record<string, Battle[]> = {};
+  finishedBattles.forEach((b) => {
+    const key = b.battle_date || 'sem-data';
+    if (!finishedByDate[key]) finishedByDate[key] = [];
+    finishedByDate[key].push(b);
+  });
+  const sortedDateKeys = Object.keys(finishedByDate).sort((a, b) => {
+    if (a === 'sem-data') return 1;
+    if (b === 'sem-data') return -1;
+    return b.localeCompare(a);
+  });
 
   const copyPix = async () => {
     try {
@@ -208,6 +228,7 @@ export default function BatalhasPage() {
               <BattleCard
                 key={battle.id}
                 battle={battle}
+                myName={myName}
                 onJoinClick={() => setJoiningBattleId(joiningBattleId === battle.id ? null : battle.id)}
                 isJoining={joiningBattleId === battle.id}
                 joinName={joinName}
@@ -231,21 +252,34 @@ export default function BatalhasPage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {liveBattles.map((battle) => (
-              <BattleCard key={battle.id} battle={battle} />
+              <BattleCard key={battle.id} battle={battle} myName={myName} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Finished battles */}
+      {/* Battle history by date */}
       {!loading && finishedBattles.length > 0 && (
         <div className="mb-10">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🏆</span> Batalhas Encerradas
+            <span>📅</span> Historico de Batalhas
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {finishedBattles.map((battle) => (
-              <BattleCard key={battle.id} battle={battle} />
+          <div className="space-y-6">
+            {sortedDateKeys.map((dateKey) => (
+              <div key={dateKey}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-px flex-1 bg-gray-200" />
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full">
+                    {dateKey === 'sem-data' ? 'Sem data' : new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  </span>
+                  <div className="h-px flex-1 bg-gray-200" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {finishedByDate[dateKey].map((battle) => (
+                    <BattleCard key={battle.id} battle={battle} myName={myName} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -349,8 +383,10 @@ export default function BatalhasPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6 text-gray-400 text-sm">
-                Nenhum jogador no ranking ainda.
+              <div className="text-center py-6 space-y-2">
+                <p className="text-4xl">🏆</p>
+                <p className="text-gray-500 font-medium text-sm">Seja o primeiro a conquistar o ranking!</p>
+                <p className="text-gray-400 text-xs">Participe de uma batalha e entre na disputa pelas premiacoes.</p>
               </div>
             )}
           </div>
@@ -390,6 +426,7 @@ function formatCardValue(entry: BattleEntry): string {
 
 function BattleCard({
   battle,
+  myName,
   onJoinClick,
   isJoining,
   joinName,
@@ -401,6 +438,7 @@ function BattleCard({
   uploading,
 }: {
   battle: Battle;
+  myName?: string;
   onJoinClick?: () => void;
   isJoining?: boolean;
   joinName?: string;
@@ -426,14 +464,14 @@ function BattleCard({
   );
 
   return (
-    <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${isLive ? 'border-red-400 animate-battle-glow' : isFinished ? 'border-gray-300' : 'border-orange-300'}`}>
+    <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${isLive ? 'border-red-400 animate-battle-glow' : isFinished ? 'border-yellow-400' : 'border-orange-300'}`}>
       {/* Header */}
-      <div className={`text-white px-4 py-3 flex items-center justify-between ${isFinished ? 'bg-gradient-to-r from-gray-500 to-gray-600' : 'bg-gradient-to-r from-orange-500 to-red-500'}`}>
+      <div className={`text-white px-4 py-3 flex items-center justify-between ${isFinished ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 'bg-gradient-to-r from-orange-500 to-red-500'}`}>
         <div className="flex items-center gap-2">
-          <span className="text-lg">⚔️</span>
+          <span className="text-lg">{isFinished ? '🏆' : '⚔️'}</span>
           <span className="font-bold text-sm">{battle.title || 'BATALHA'}</span>
           {isLive && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full animate-urgency-pulse">AO VIVO</span>}
-          {isFinished && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full">ENCERRADA</span>}
+          {isFinished && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full">RESULTADO</span>}
         </div>
         <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full">
           {battle.boosters_per_player * battle.max_players} boosters ({battle.boosters_per_player} cada)
@@ -456,6 +494,9 @@ function BattleCard({
               R$ {pricePerPlayer.toFixed(2).replace('.', ',')}
               <span className="text-xs font-normal text-gray-400 ml-1">por jogador</span>
             </p>
+            <p className="text-[11px] text-gray-400">
+              {battle.boosters_per_player} booster{battle.boosters_per_player > 1 ? 's' : ''} por jogador • {battle.boosters_per_player * battle.max_players} no total
+            </p>
           </div>
         </div>
 
@@ -466,36 +507,41 @@ function BattleCard({
             <p className="text-xs text-gray-400">{battle.entries.length}/{battle.max_players}</p>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {slots.map((entry, i) => (
-              <div key={i} className={`rounded-xl p-2.5 text-center text-sm font-medium border ${
-                entry
-                  ? winner?.id === entry.id
-                    ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
-                    : 'bg-orange-50 border-orange-200 text-orange-700'
-                  : 'bg-gray-50 border-dashed border-gray-300 text-gray-400'
-              }`}>
-                {entry ? (
-                  <div className="flex items-center justify-center gap-1.5">
-                    {entry.avatar ? (
-                      <img src={entry.avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 text-xs font-bold">
-                        {entry.player_name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    {winner?.id === entry.id && <span>🏆</span>}
-                    <span className="truncate text-xs">{entry.player_name}</span>
-                    {entry.payment_status === 'confirmed' ? (
-                      <span className="text-green-500 text-xs" title="Pago">✓</span>
-                    ) : (
-                      <span className="text-orange-400 text-xs" title="Pagamento pendente">⏳</span>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-xs">Vaga aberta</span>
-                )}
-              </div>
-            ))}
+            {slots.map((entry, i) => {
+              const isMe = entry && myName && entry.player_name.toLowerCase() === myName.toLowerCase();
+              return (
+                <div key={i} className={`rounded-xl p-2.5 text-center text-sm font-medium border ${
+                  entry
+                    ? winner?.id === entry.id
+                      ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
+                      : isMe
+                        ? 'bg-blue-50 border-blue-300 text-blue-700'
+                        : 'bg-orange-50 border-orange-200 text-orange-700'
+                    : 'bg-gray-50 border-dashed border-gray-300 text-gray-400'
+                }`}>
+                  {entry ? (
+                    <div className="flex items-center justify-center gap-1.5">
+                      {entry.avatar ? (
+                        <img src={entry.avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 text-xs font-bold">
+                          {entry.player_name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {winner?.id === entry.id && <span>🏆</span>}
+                      <span className="truncate text-xs">{isMe ? 'Voce' : entry.player_name}</span>
+                      {entry.payment_status === 'confirmed' ? (
+                        <span className="text-green-500 text-xs" title="Pago">✓</span>
+                      ) : (
+                        <span className="text-orange-400 text-xs" title="Pagamento pendente">⏳</span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs">Vaga aberta</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -517,23 +563,39 @@ function BattleCard({
         {/* Results — winner + other players' cards */}
         {isFinished && winner && (
           <div className="space-y-2">
-            {/* Winner card */}
-            <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-3">
+            {/* Winner card - celebratory */}
+            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-400 rounded-xl p-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 text-6xl opacity-10 -mt-2 -mr-2">🏆</div>
+              <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-wider mb-2">Vencedor</p>
               <div className="flex items-center gap-3">
                 {winner.card_image && (
-                  <img src={winner.card_image} alt="" className="w-16 h-22 rounded-lg object-cover border border-yellow-300 shrink-0" />
+                  <img src={winner.card_image} alt="" className="w-20 h-28 rounded-lg object-cover border-2 border-yellow-400 shadow-md shrink-0" />
                 )}
-                <div className={`${winner.card_image ? '' : 'text-center w-full'}`}>
-                  <p className="font-bold text-yellow-700 flex items-center gap-1 justify-center">
-                    🏆 {winner.player_name}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    {winner.avatar ? (
+                      <img src={winner.avatar} alt="" className="w-8 h-8 rounded-full object-cover border-2 border-yellow-400" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center text-yellow-700 font-bold text-sm border-2 border-yellow-400">
+                        {winner.player_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <p className="font-bold text-yellow-800 text-base">
+                      {myName && winner.player_name.toLowerCase() === myName.toLowerCase() ? 'Voce!' : winner.player_name}
+                    </p>
+                  </div>
+                  {winner.best_card && (
+                    <p className="text-sm text-yellow-700 font-medium">
+                      {winner.best_card}
+                    </p>
+                  )}
                   {winner.best_card && (
                     <p className="text-xs text-yellow-600 mt-0.5">
-                      {winner.best_card} — {formatCardValue(winner)}
+                      {formatCardValue(winner)}
                     </p>
                   )}
                   {wasTiebreak && (
-                    <p className="text-[10px] text-yellow-500 mt-0.5">Venceu pelo desempate (2a carta)</p>
+                    <p className="text-[10px] text-yellow-500 mt-1 bg-yellow-100 inline-block px-2 py-0.5 rounded-full">Venceu pelo desempate (2a carta)</p>
                   )}
                 </div>
               </div>
@@ -556,7 +618,9 @@ function BattleCard({
                             {entry.player_name.charAt(0).toUpperCase()}
                           </div>
                         )}
-                        <span className="font-medium text-gray-600 text-xs">{entry.player_name}</span>
+                        <span className="font-medium text-gray-600 text-xs">
+                          {myName && entry.player_name.toLowerCase() === myName.toLowerCase() ? 'Voce' : entry.player_name}
+                        </span>
                       </div>
                       <span className="text-xs text-gray-500">{entry.best_card} — {formatCardValue(entry)}</span>
                     </div>

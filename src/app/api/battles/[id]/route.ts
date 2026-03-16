@@ -161,6 +161,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (body.boosters_per_player !== undefined) { updates.push('boosters_per_player = ?'); values.push(body.boosters_per_player); }
     if (body.max_players !== undefined) { updates.push('max_players = ?'); values.push(body.max_players); }
     if (body.product_id !== undefined) { updates.push('product_id = ?'); values.push(body.product_id); }
+    if (body.battle_date !== undefined) { updates.push('battle_date = ?'); values.push(body.battle_date || null as unknown as string); }
     if (updates.length > 0) {
       values.push(id as unknown as number);
       db.prepare(`UPDATE battles SET ${updates.join(', ')} WHERE id = ?`).run(...values);

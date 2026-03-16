@@ -108,6 +108,9 @@ function initDb(db: Database.Database) {
   if (!btCols.some(c => c.name === 'creator_entry_id')) {
     db.exec("ALTER TABLE battles ADD COLUMN creator_entry_id INTEGER");
   }
+  if (!btCols.some(c => c.name === 'battle_date')) {
+    db.exec("ALTER TABLE battles ADD COLUMN battle_date TEXT");
+  }
 
   // Migration: add card_value and card_value_2 to battle_entries (price-based criteria)
   const beCols2 = db.prepare("PRAGMA table_info(battle_entries)").all() as { name: string }[];

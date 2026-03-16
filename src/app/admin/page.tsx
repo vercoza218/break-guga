@@ -796,6 +796,7 @@ interface Battle {
   max_players: number;
   status: string;
   title: string | null;
+  battle_date: string | null;
   creator_entry_id: number | null;
   winner_entry_id: number | null;
   entries: BattleEntry[];
@@ -808,6 +809,7 @@ function BattlesTab() {
   const [boostersPerPlayer, setBoostersPerPlayer] = useState('1');
   const [maxPlayers, setMaxPlayers] = useState('2');
   const [battleTitle, setBattleTitle] = useState('');
+  const [battleDate, setBattleDate] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
   const [editingBattleId, setEditingBattleId] = useState<number | null>(null);
@@ -815,6 +817,7 @@ function BattlesTab() {
   const [editBoosters, setEditBoosters] = useState('');
   const [editMaxPlayers, setEditMaxPlayers] = useState('');
   const [editProductId, setEditProductId] = useState('');
+  const [editDate, setEditDate] = useState('');
   const { toast } = useToast();
 
   const fetchBattles = useCallback(async () => {
@@ -846,12 +849,14 @@ function BattlesTab() {
         boosters_per_player: parseInt(boostersPerPlayer),
         max_players: parseInt(maxPlayers),
         title: battleTitle || null,
+        battle_date: battleDate || null,
       }),
     });
     setProductId('');
     setBoostersPerPlayer('1');
     setMaxPlayers('2');
     setBattleTitle('');
+    setBattleDate('');
     fetchBattles();
     toast('Batalha criada!');
   };
@@ -885,6 +890,7 @@ function BattlesTab() {
     setEditBoosters(battle.boosters_per_player.toString());
     setEditMaxPlayers(battle.max_players.toString());
     setEditProductId(battle.product_id.toString());
+    setEditDate((battle as Battle & { battle_date?: string }).battle_date || '');
   };
 
   const handleEditBattle = async (battleId: number) => {
@@ -897,6 +903,7 @@ function BattlesTab() {
         boosters_per_player: parseInt(editBoosters) || 1,
         max_players: parseInt(editMaxPlayers) || 2,
         product_id: parseInt(editProductId),
+        battle_date: editDate || null,
       }),
     });
     setEditingBattleId(null);
@@ -1051,13 +1058,24 @@ function BattlesTab() {
             className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
           />
         </div>
-        <input
-          type="text"
-          placeholder="Titulo da batalha (opcional)"
-          value={battleTitle}
-          onChange={(e) => setBattleTitle(e.target.value)}
-          className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
-        />
+        <div className="flex gap-3 flex-wrap">
+          <input
+            type="text"
+            placeholder="Titulo da batalha (opcional)"
+            value={battleTitle}
+            onChange={(e) => setBattleTitle(e.target.value)}
+            className="flex-1 min-w-[200px] bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
+          />
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-500 whitespace-nowrap">Data:</label>
+            <input
+              type="date"
+              value={battleDate}
+              onChange={(e) => setBattleDate(e.target.value)}
+              className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-3 text-gray-800 focus:border-orange-500 focus:outline-none min-h-[44px]"
+            />
+          </div>
+        </div>
         <button type="submit" className="w-full md:w-auto bg-orange-500 text-white font-bold px-8 py-3 rounded-xl hover:bg-orange-600 transition-colors min-h-[44px]">
           Criar Batalha
         </button>
@@ -1077,7 +1095,10 @@ function BattlesTab() {
               {editingBattleId === battle.id ? (
                 <div className="space-y-3 bg-orange-50 border border-orange-200 rounded-xl p-4">
                   <p className="text-sm font-bold text-orange-600">Editar Batalha</p>
-                  <input type="text" placeholder="Titulo (opcional)" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px]" />
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="Titulo (opcional)" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="flex-1 bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px]" />
+                    <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="bg-white border border-gray-300 rounded-xl px-2 py-2 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px]" />
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">Produto</label>
@@ -1114,7 +1135,7 @@ function BattlesTab() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    {battle.product_name} | {battle.boosters_per_player} booster(s) | {battle.entries.length}/{battle.max_players} jogadores | R$ {(battle.product_price * battle.boosters_per_player).toFixed(2)}/jogador
+                    {battle.product_name} | {battle.boosters_per_player} booster(s) | {battle.entries.length}/{battle.max_players} jogadores | R$ {(battle.product_price * battle.boosters_per_player).toFixed(2)}/jogador{battle.battle_date && ` | ${new Date(battle.battle_date + 'T12:00:00').toLocaleDateString('pt-BR')}`}
                   </p>
                   {battle.entries.length > 0 && (
                     <p className="text-xs mt-1">
