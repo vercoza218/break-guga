@@ -1054,7 +1054,7 @@ function BattlesTab() {
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0 flex-wrap">
-                  {battle.status === 'ready' && (
+                  {(battle.status === 'ready' || (battle.status === 'open' && battle.entries.length > 0)) && (
                     <button onClick={() => handleSetStatus(battle.id, 'live')} className="bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-600 transition-colors min-h-[44px]">
                       Iniciar Ao Vivo
                     </button>
