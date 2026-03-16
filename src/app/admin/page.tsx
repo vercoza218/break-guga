@@ -1229,30 +1229,33 @@ function BattlesTab() {
                       )}
                       {/* Card info / registration */}
                       {entry.best_card ? (
-                        <div className="flex items-center gap-2">
-                          {entry.card_image && (
-                            <img src={entry.card_image} alt="" className="w-12 h-16 rounded-lg object-cover border border-gray-200" />
-                          )}
-                          <div className="text-sm text-gray-600">
-                            <span className="font-medium">{entry.best_card}</span>
-                            <span className="text-gray-400 mx-1">|</span>
-                            <span>R$ {(entry.card_value || 0).toFixed(2)}</span>
-                            {(entry.card_value_2 || 0) > 0 && (
+                        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 w-full">
+                          <label className="cursor-pointer shrink-0 group relative">
+                            {entry.card_image ? (
                               <>
-                                <span className="text-gray-400 mx-1">|</span>
-                                <span className="text-gray-400">2a: R$ {(entry.card_value_2 || 0).toFixed(2)}</span>
+                                <img src={entry.card_image} alt="" className="w-14 h-20 rounded-lg object-cover border-2 border-orange-300 shadow-sm" />
+                                <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <span className="text-white text-[10px] font-bold">Trocar</span>
+                                </div>
                               </>
+                            ) : (
+                              <div className="w-14 h-20 rounded-lg border-2 border-dashed border-orange-300 flex flex-col items-center justify-center text-orange-400 hover:bg-orange-50 transition-colors bg-white">
+                                <span className="text-base">📸</span>
+                                <span className="text-[8px] leading-tight text-center font-medium">Foto<br/>carta</span>
+                              </div>
+                            )}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadCardImage(battle.id, entry.id, f); }} />
+                          </label>
+                          <div className="text-sm text-gray-600 flex-1 min-w-0">
+                            <p className="font-bold text-gray-800 truncate">{entry.best_card}</p>
+                            <p className="text-orange-600 font-medium">R$ {(entry.card_value || 0).toFixed(2)}</p>
+                            {(entry.card_value_2 || 0) > 0 && (
+                              <p className="text-gray-400 text-xs">2a carta: R$ {(entry.card_value_2 || 0).toFixed(2)}</p>
                             )}
                           </div>
-                          <label className="cursor-pointer shrink-0">
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadCardImage(battle.id, entry.id, f); }} />
-                            <span className="bg-blue-100 text-blue-600 text-xs font-bold px-2 py-1 rounded-lg hover:bg-blue-200 transition-colors">
-                              {entry.card_image ? 'Trocar foto' : 'Foto carta'}
-                            </span>
-                          </label>
                         </div>
                       ) : battle.status === 'live' ? (
-                        <CardRegistrationForm battleId={battle.id} entryId={entry.id} onRegister={handleRegisterCard} />
+                        <CardRegistrationForm battleId={battle.id} entryId={entry.id} onRegister={handleRegisterCard} onUploadCardImage={handleUploadCardImage} existingCardImage={entry.card_image} />
                       ) : (
                         <span className="text-xs text-gray-400">Aguardando carta...</span>
                       )}
@@ -1291,9 +1294,51 @@ function BattlesTab() {
 
               {/* Winner announcement */}
               {battle.status === 'finished' && winner && (
-                <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-center">
-                  <p className="text-lg font-bold text-yellow-700">🏆 Vencedor: {winner.player_name}</p>
-                  <p className="text-sm text-yellow-600">{winner.best_card} — R$ {(winner.card_value || 0).toFixed(2)}</p>
+                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-400 rounded-xl p-4 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 text-7xl opacity-10 -mt-3 -mr-3">🏆</div>
+                  <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-wider mb-3">Vencedor da Batalha</p>
+                  <div className="flex items-center gap-4">
+                    {/* Winner card image with upload */}
+                    <label className="cursor-pointer shrink-0 group relative">
+                      {winner.card_image ? (
+                        <>
+                          <img src={winner.card_image} alt="" className="w-20 h-28 rounded-xl object-cover border-2 border-yellow-400 shadow-lg" />
+                          <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-white text-xs font-bold">Trocar</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-20 h-28 rounded-xl border-2 border-dashed border-yellow-400 flex flex-col items-center justify-center text-yellow-500 hover:bg-yellow-100 transition-colors bg-yellow-50/50">
+                          <span className="text-2xl">📸</span>
+                          <span className="text-[9px] leading-tight text-center font-medium mt-1">Upload carta<br/>vencedora</span>
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadCardImage(battle.id, winner.id, f); }} />
+                    </label>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {winner.avatar ? (
+                          <img src={winner.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-yellow-400" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-yellow-200 flex items-center justify-center text-yellow-700 font-bold text-lg border-2 border-yellow-400">
+                            {winner.player_name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-bold text-yellow-800 text-lg leading-tight">{winner.player_name}</p>
+                          <p className="text-xs text-yellow-600">🏆 Campeao</p>
+                        </div>
+                      </div>
+                      {winner.best_card && (
+                        <div className="mt-2 bg-yellow-100/60 rounded-lg px-3 py-1.5">
+                          <p className="font-bold text-yellow-800 text-sm">{winner.best_card}</p>
+                          <p className="text-yellow-700 text-sm font-medium">R$ {(winner.card_value || 0).toFixed(2)}
+                            {(winner.card_value_2 || 0) > 0 && <span className="text-yellow-500 text-xs ml-2">2a: R$ {(winner.card_value_2 || 0).toFixed(2)}</span>}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1515,22 +1560,60 @@ function RankingTab() {
   );
 }
 
-function CardRegistrationForm({ battleId, entryId, onRegister }: { battleId: number; entryId: number; onRegister: (bId: number, eId: number, card: string, cardValue: number, cardValue2: number) => void }) {
+function CardRegistrationForm({ battleId, entryId, onRegister, onUploadCardImage, existingCardImage }: {
+  battleId: number;
+  entryId: number;
+  onRegister: (bId: number, eId: number, card: string, cardValue: number, cardValue2: number) => void;
+  onUploadCardImage: (bId: number, eId: number, file: File) => void;
+  existingCardImage?: string | null;
+}) {
   const [cardName, setCardName] = useState('');
   const [cardValue, setCardValue] = useState('');
   const [cardValue2, setCardValue2] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(existingCardImage || null);
+
+  const handleFileChange = (file: File) => {
+    setPreviewUrl(URL.createObjectURL(file));
+    onUploadCardImage(battleId, entryId, file);
+  };
 
   return (
-    <div className="flex flex-col md:flex-row gap-2">
-      <input type="text" placeholder="Nome da carta" value={cardName} onChange={(e) => setCardName(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-full md:w-36" />
-      <input type="number" placeholder="Valor NM R$" value={cardValue} onChange={(e) => setCardValue(e.target.value)} min={0} step="0.01" title="Menor preco PT-BR Near Mint na Liga Pokemon" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
-      <input type="number" placeholder="2a carta R$" value={cardValue2} onChange={(e) => setCardValue2(e.target.value)} min={0} step="0.01" title="Segunda carta mais cara (NM PT-BR)" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-24" />
-      <button
-        onClick={() => { if (cardName && cardValue) onRegister(battleId, entryId, cardName, parseFloat(cardValue), parseFloat(cardValue2 || '0')); }}
-        className="bg-orange-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-orange-600 transition-colors text-sm min-h-[36px] whitespace-nowrap"
-      >
-        Registrar
-      </button>
+    <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-3 space-y-2 w-full">
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Registrar Carta</p>
+      <div className="flex gap-3 items-start">
+        {/* Card image upload */}
+        <label className="cursor-pointer shrink-0 group">
+          {previewUrl ? (
+            <div className="relative">
+              <img src={previewUrl} alt="" className="w-16 h-22 rounded-lg object-cover border-2 border-orange-300 shadow-sm" />
+              <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white text-xs">Trocar</span>
+              </div>
+            </div>
+          ) : (
+            <div className="w-16 h-22 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 hover:text-orange-400 transition-colors bg-white">
+              <span className="text-lg">📸</span>
+              <span className="text-[9px] leading-tight text-center">Foto da<br/>carta</span>
+            </div>
+          )}
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileChange(f); }} />
+        </label>
+        {/* Card info fields */}
+        <div className="flex-1 space-y-1.5">
+          <input type="text" placeholder="Nome da carta" value={cardName} onChange={(e) => setCardName(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] w-full" />
+          <div className="flex gap-1.5">
+            <input type="number" placeholder="Valor NM R$" value={cardValue} onChange={(e) => setCardValue(e.target.value)} min={0} step="0.01" title="Menor preco PT-BR Near Mint na Liga Pokemon" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] flex-1" />
+            <input type="number" placeholder="2a carta R$" value={cardValue2} onChange={(e) => setCardValue2(e.target.value)} min={0} step="0.01" title="Segunda carta mais cara (NM PT-BR)" className="bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[36px] flex-1" />
+          </div>
+          <button
+            onClick={() => { if (cardName && cardValue) onRegister(battleId, entryId, cardName, parseFloat(cardValue), parseFloat(cardValue2 || '0')); }}
+            disabled={!cardName || !cardValue}
+            className="w-full bg-orange-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-orange-600 transition-colors text-sm min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Registrar Carta
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
