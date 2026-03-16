@@ -810,6 +810,11 @@ function BattlesTab() {
   const [battleTitle, setBattleTitle] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
+  const [editingBattleId, setEditingBattleId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBoosters, setEditBoosters] = useState('');
+  const [editMaxPlayers, setEditMaxPlayers] = useState('');
+  const [editProductId, setEditProductId] = useState('');
   const { toast } = useToast();
 
   const fetchBattles = useCallback(async () => {
@@ -872,6 +877,31 @@ function BattlesTab() {
     });
     fetchBattles();
     toast(status === 'live' ? 'Batalha ao vivo!' : `Status: ${status}`);
+  };
+
+  const startEditBattle = (battle: Battle) => {
+    setEditingBattleId(battle.id);
+    setEditTitle(battle.title || '');
+    setEditBoosters(battle.boosters_per_player.toString());
+    setEditMaxPlayers(battle.max_players.toString());
+    setEditProductId(battle.product_id.toString());
+  };
+
+  const handleEditBattle = async (battleId: number) => {
+    await fetch(`/api/battles/${battleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'edit',
+        title: editTitle || null,
+        boosters_per_player: parseInt(editBoosters) || 1,
+        max_players: parseInt(editMaxPlayers) || 2,
+        product_id: parseInt(editProductId),
+      }),
+    });
+    setEditingBattleId(null);
+    fetchBattles();
+    toast('Batalha atualizada!');
   };
 
   const handleRegisterCard = async (battleId: number, entryId: number, bestCard: string, cardValue: number, cardValue2: number) => {
@@ -1029,6 +1059,32 @@ function BattlesTab() {
           return (
             <div key={battle.id} className="bg-white border border-orange-200 rounded-2xl p-4 md:p-6 shadow-sm space-y-4">
               {/* Header */}
+              {editingBattleId === battle.id ? (
+                <div className="space-y-3 bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <p className="text-sm font-bold text-orange-600">Editar Batalha</p>
+                  <input type="text" placeholder="Titulo (opcional)" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px]" />
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Produto</label>
+                      <select value={editProductId} onChange={(e) => setEditProductId(e.target.value)} className="w-full bg-white border border-gray-300 rounded-xl px-2 py-2 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px]">
+                        {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Boosters/jogador</label>
+                      <input type="number" value={editBoosters} onChange={(e) => setEditBoosters(e.target.value)} min={1} className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px]" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Max jogadores</label>
+                      <input type="number" value={editMaxPlayers} onChange={(e) => setEditMaxPlayers(e.target.value)} min={2} max={8} className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-800 focus:border-orange-500 focus:outline-none min-h-[40px]" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleEditBattle(battle.id)} className="bg-green-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-green-600 transition-colors min-h-[40px]">Salvar</button>
+                    <button onClick={() => setEditingBattleId(null)} className="bg-gray-200 text-gray-600 text-sm px-4 py-2 rounded-xl hover:bg-gray-300 transition-colors min-h-[40px]">Cancelar</button>
+                  </div>
+                </div>
+              ) : (
               <div className="flex flex-col md:flex-row md:items-center gap-3">
                 {battle.product_image && (
                   <img src={battle.product_image} alt="" className="w-12 h-16 rounded-xl object-contain bg-gray-50 shrink-0" />
@@ -1054,6 +1110,11 @@ function BattlesTab() {
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0 flex-wrap">
+                  {battle.status !== 'finished' && (
+                    <button onClick={() => startEditBattle(battle)} className="bg-blue-100 text-blue-600 text-sm font-bold px-3 py-2 rounded-xl hover:bg-blue-200 transition-colors min-h-[44px]">
+                      Editar
+                    </button>
+                  )}
                   {(battle.status === 'ready' || (battle.status === 'open' && battle.entries.length > 0)) && (
                     <button onClick={() => handleSetStatus(battle.id, 'live')} className="bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-600 transition-colors min-h-[44px]">
                       Iniciar Ao Vivo
@@ -1069,6 +1130,7 @@ function BattlesTab() {
                   </button>
                 </div>
               </div>
+              )}
 
               {/* Players */}
               <div className="space-y-2">

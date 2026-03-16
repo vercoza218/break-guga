@@ -143,6 +143,23 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(entry);
   }
 
+  // Edit battle details
+  if (body.action === 'edit') {
+    const updates: string[] = [];
+    const values: (string | number)[] = [];
+    if (body.title !== undefined) { updates.push('title = ?'); values.push(body.title || null as unknown as string); }
+    if (body.boosters_per_player !== undefined) { updates.push('boosters_per_player = ?'); values.push(body.boosters_per_player); }
+    if (body.max_players !== undefined) { updates.push('max_players = ?'); values.push(body.max_players); }
+    if (body.product_id !== undefined) { updates.push('product_id = ?'); values.push(body.product_id); }
+    if (updates.length > 0) {
+      values.push(id as unknown as number);
+      db.prepare(`UPDATE battles SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    }
+    checkAndUpdateReady(db, id);
+    const battle = db.prepare('SELECT * FROM battles WHERE id = ?').get(id);
+    return NextResponse.json(battle);
+  }
+
   // Update status manually
   if (body.status) {
     db.prepare('UPDATE battles SET status = ? WHERE id = ?').run(body.status, id);
