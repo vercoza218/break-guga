@@ -259,20 +259,20 @@ export default function BatalhasPage() {
             {/* Rewards banner */}
             <div className="bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-300 rounded-xl p-4 text-sm space-y-3">
               <p className="text-center font-bold text-amber-800">🎁 Premiacoes Mensais</p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-yellow-400/20 border border-yellow-400 rounded-xl p-3">
-                  <div className="text-2xl mb-1">🥇</div>
-                  <p className="font-bold text-yellow-700 text-base">R$ 150</p>
-                  <p className="text-[10px] text-yellow-600 mt-0.5">em creditos</p>
-                </div>
+              <div className="grid grid-cols-3 gap-2 text-center items-end">
                 <div className="bg-gray-300/20 border border-gray-400 rounded-xl p-3">
-                  <div className="text-2xl mb-1">🥈</div>
-                  <p className="font-bold text-gray-600 text-base">R$ 100</p>
+                  <div className="text-xl mb-1">🥈</div>
+                  <p className="font-bold text-gray-600 text-sm">R$ 100</p>
                   <p className="text-[10px] text-gray-500 mt-0.5">em creditos</p>
                 </div>
+                <div className="bg-yellow-400/20 border-2 border-yellow-400 rounded-xl p-4 -mt-1 shadow-md">
+                  <div className="text-3xl mb-1">🥇</div>
+                  <p className="font-bold text-yellow-700 text-lg">R$ 150</p>
+                  <p className="text-[10px] text-yellow-600 mt-0.5">em creditos</p>
+                </div>
                 <div className="bg-orange-300/20 border border-orange-400 rounded-xl p-3">
-                  <div className="text-2xl mb-1">🥉</div>
-                  <p className="font-bold text-orange-700 text-base">R$ 50</p>
+                  <div className="text-xl mb-1">🥉</div>
+                  <p className="font-bold text-orange-700 text-sm">R$ 50</p>
                   <p className="text-[10px] text-orange-600 mt-0.5">em creditos</p>
                 </div>
               </div>
