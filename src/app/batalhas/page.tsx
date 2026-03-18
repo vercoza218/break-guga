@@ -273,30 +273,6 @@ export default function BatalhasPage() {
         </div>
       )}
 
-      {/* Battle history by date */}
-      {!loading && finishedBattles.length > 0 && (
-        <div className="mb-10">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>📅</span> Historico de Batalhas
-          </h3>
-          <div className="space-y-3">
-            {sortedDateKeys.map((dateKey) => {
-              const dateLabel = dateKey === 'sem-data' ? 'Sem data' : new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-              const battleCount = finishedByDate[dateKey].length;
-              return (
-                <DateGroup key={dateKey} dateLabel={dateLabel} battleCount={battleCount}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {finishedByDate[dateKey].map((battle) => (
-                      <BattleCard key={battle.id} battle={battle} myName={myName} />
-                    ))}
-                  </div>
-                </DateGroup>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Ranking */}
       {!loading && (
         <div className="mb-10">
@@ -401,6 +377,30 @@ export default function BatalhasPage() {
                 <p className="text-gray-400 text-xs">Participe de uma batalha e entre na disputa pelas premiacoes.</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Battle history by date */}
+      {!loading && finishedBattles.length > 0 && (
+        <div className="mb-10">
+          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>📅</span> Historico de Batalhas
+          </h3>
+          <div className="space-y-3">
+            {sortedDateKeys.map((dateKey) => {
+              const dateLabel = dateKey === 'sem-data' ? 'Sem data' : new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+              const battleCount = finishedByDate[dateKey].length;
+              return (
+                <DateGroup key={dateKey} dateLabel={dateLabel} battleCount={battleCount}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {finishedByDate[dateKey].map((battle) => (
+                      <BattleCard key={battle.id} battle={battle} myName={myName} />
+                    ))}
+                  </div>
+                </DateGroup>
+              );
+            })}
           </div>
         </div>
       )}
