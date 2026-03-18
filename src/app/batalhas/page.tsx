@@ -115,7 +115,8 @@ export default function BatalhasPage() {
   };
 
   const openBattles = battles.filter((b) => b.status === 'open');
-  const liveBattles = battles.filter((b) => b.status === 'live' || b.status === 'ready');
+  const readyBattles = battles.filter((b) => b.status === 'ready');
+  const liveBattles = battles.filter((b) => b.status === 'live');
   const finishedBattles = battles.filter((b) => b.status === 'finished');
 
   // Get stored player name for "you" highlighting
@@ -239,6 +240,20 @@ export default function BatalhasPage() {
                 onJoin={() => handleJoin(battle.id)}
                 uploading={uploading}
               />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ready battles — waiting to go live */}
+      {!loading && readyBattles.length > 0 && (
+        <div className="mb-10">
+          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>⏳</span> Aguardando Inicio
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {readyBattles.map((battle) => (
+              <BattleCard key={battle.id} battle={battle} myName={myName} />
             ))}
           </div>
         </div>
@@ -454,6 +469,7 @@ function BattleCard({
   const winner = battle.entries.find((e) => e.id === battle.winner_entry_id);
   const isLive = battle.status === 'live';
   const isOpen = battle.status === 'open';
+  const isReady = battle.status === 'ready';
   const isFinished = battle.status === 'finished';
   const confirmedCount = battle.entries.filter(e => e.payment_status === 'confirmed').length;
   const slotsLeft = battle.max_players - battle.entries.length;
@@ -463,14 +479,26 @@ function BattleCard({
     (e) => e.id !== winner.id && (e.card_value || 0) === (winner.card_value || 0)
   );
 
+  // Status-based styling
+  const borderColor = isLive ? 'border-red-400 animate-battle-glow'
+    : isReady ? 'border-amber-400'
+    : isFinished ? 'border-yellow-400'
+    : 'border-orange-300';
+
+  const headerBg = isLive ? 'bg-gradient-to-r from-red-500 to-rose-600'
+    : isReady ? 'bg-gradient-to-r from-amber-500 to-yellow-500'
+    : isFinished ? 'bg-gradient-to-r from-yellow-500 to-amber-500'
+    : 'bg-gradient-to-r from-orange-500 to-orange-600';
+
   return (
-    <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${isLive ? 'border-red-400 animate-battle-glow' : isFinished ? 'border-yellow-400' : 'border-orange-300'}`}>
+    <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${borderColor}`}>
       {/* Header */}
-      <div className={`text-white px-4 py-3 flex items-center justify-between ${isFinished ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 'bg-gradient-to-r from-orange-500 to-red-500'}`}>
+      <div className={`text-white px-4 py-3 flex items-center justify-between ${headerBg}`}>
         <div className="flex items-center gap-2">
-          <span className="text-lg">{isFinished ? '🏆' : '⚔️'}</span>
+          <span className="text-lg">{isFinished ? '🏆' : isLive ? '🔴' : isReady ? '⏳' : '⚔️'}</span>
           <span className="font-bold text-sm">{battle.title || 'BATALHA'}</span>
           {isLive && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full animate-urgency-pulse">AO VIVO</span>}
+          {isReady && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full">PRONTA</span>}
           {isFinished && <span className="bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full">RESULTADO</span>}
         </div>
         <span className="text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full">
@@ -555,7 +583,7 @@ function BattleCard({
         {/* Progress bar */}
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className={`h-2 rounded-full transition-all duration-500 ${isLive ? 'bg-red-500' : isFinished ? 'bg-gray-400' : 'bg-orange-500'}`}
+            className={`h-2 rounded-full transition-all duration-500 ${isLive ? 'bg-red-500' : isReady ? 'bg-amber-500' : isFinished ? 'bg-yellow-500' : 'bg-orange-500'}`}
             style={{ width: `${(battle.entries.length / battle.max_players) * 100}%` }}
           />
         </div>

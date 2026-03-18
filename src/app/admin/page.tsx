@@ -1146,11 +1146,9 @@ function BattlesTab() {
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0 flex-wrap">
-                  {battle.status !== 'finished' && (
-                    <button onClick={() => startEditBattle(battle)} className="bg-blue-100 text-blue-600 text-sm font-bold px-3 py-2 rounded-xl hover:bg-blue-200 transition-colors min-h-[44px]">
-                      Editar
-                    </button>
-                  )}
+                  <button onClick={() => startEditBattle(battle)} className="bg-blue-100 text-blue-600 text-sm font-bold px-3 py-2 rounded-xl hover:bg-blue-200 transition-colors min-h-[44px]">
+                    Editar
+                  </button>
                   {(battle.status === 'ready' || (battle.status === 'open' && battle.entries.length > 0)) && (
                     <button onClick={() => handleSetStatus(battle.id, 'live')} className="bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-red-600 transition-colors min-h-[44px]">
                       Iniciar Ao Vivo
