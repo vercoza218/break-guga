@@ -1437,6 +1437,18 @@ function RankingTab() {
     toast('Removido do ranking', 'info');
   };
 
+  const handleSyncFromHistory = async () => {
+    if (!confirm('Sincronizar ranking com o historico de batalhas? Isso vai substituir os dados atuais do ranking.')) return;
+    const res = await fetch('/api/battles/ranking', { method: 'PUT' });
+    if (res.ok) {
+      const data = await res.json();
+      fetchRanking();
+      toast(`Ranking sincronizado! ${data.count} jogador(es) encontrado(s).`);
+    } else {
+      toast('Erro ao sincronizar', 'error');
+    }
+  };
+
   const handleResetAll = async () => {
     if (!confirm('Resetar todo o ranking? Esta acao nao pode ser desfeita.')) return;
     await fetch('/api/battles/ranking', { method: 'DELETE' });
@@ -1456,13 +1468,18 @@ function RankingTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-lg font-bold text-yellow-600">🏆 Ranking de Batalhas</h3>
-        {ranking.length > 0 && (
-          <button onClick={handleResetAll} className="bg-red-100 text-red-500 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors">
-            Resetar Ranking
+        <div className="flex gap-2">
+          <button onClick={handleSyncFromHistory} className="bg-blue-100 text-blue-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors flex items-center gap-1">
+            🔄 Sincronizar com Historico
           </button>
-        )}
+          {ranking.length > 0 && (
+            <button onClick={handleResetAll} className="bg-red-100 text-red-500 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors">
+              Resetar Ranking
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Add player */}
