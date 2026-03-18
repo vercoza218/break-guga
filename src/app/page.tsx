@@ -144,20 +144,34 @@ export default function StorePage() {
       <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start ${loading ? 'hidden' : ''}`}>
         {[...products]
           .sort((a, b) => {
-            // Novidade first, then coming_soon last
-            if (a.is_new && !b.is_new) return -1;
-            if (!a.is_new && b.is_new) return 1;
-            return (a.coming_soon ? 1 : 0) - (b.coming_soon ? 1 : 0);
+            // Order: NOVIDADE >> ULTIMOS PRODUTOS >> DISPONIVEIS >> ESGOTADO >> EM BREVE
+            const comingSoonA = isLiveOff ? true : !!a.coming_soon;
+            const comingSoonB = isLiveOff ? true : !!b.coming_soon;
+            const soldOutA = a.stock <= 0;
+            const soldOutB = b.stock <= 0;
+            const isNewA = !!a.is_new && !comingSoonA && !soldOutA;
+            const isNewB = !!b.is_new && !comingSoonB && !soldOutB;
+            const lowStockA = !comingSoonA && !soldOutA && !isNewA && a.stock > 0 && a.stock < 10;
+            const lowStockB = !comingSoonB && !soldOutB && !isNewB && b.stock > 0 && b.stock < 10;
+
+            const rank = (isNew: boolean, lowStock: boolean, soldOut: boolean, comingSoon: boolean) => {
+              if (isNew) return 0;
+              if (lowStock) return 1;
+              if (!soldOut && !comingSoon) return 2;
+              if (soldOut) return 3;
+              return 4; // coming soon
+            };
+
+            return rank(isNewA, lowStockA, soldOutA, comingSoonA) - rank(isNewB, lowStockB, soldOutB, comingSoonB);
           })
           .map((product) => {
           const qty = quantities[product.id] || 0;
           const total = qty * product.price;
           const soldOut = product.stock <= 0;
-          // If live is off, all products show as coming soon (unless they were already marked as coming_soon)
           const comingSoon = isLiveOff ? true : !!product.coming_soon;
           const unavailable = soldOut || comingSoon;
-          const lowStock = !comingSoon && !soldOut && product.stock > 0 && product.stock < 10;
           const isNew = !!product.is_new && !comingSoon && !soldOut;
+          const lowStock = !comingSoon && !soldOut && !isNew && product.stock > 0 && product.stock < 10;
 
           return (
             <div
@@ -183,16 +197,9 @@ export default function StorePage() {
               )}
 
               {/* Low stock urgency banner */}
-              {lowStock && !isNew && (
+              {lowStock && (
                 <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-1.5 px-3 text-xs font-bold tracking-wider animate-urgency-pulse">
                   ULTIMOS PRODUTOS — Restam apenas {product.stock}!
-                </div>
-              )}
-
-              {/* Low stock inside novidade */}
-              {lowStock && isNew && (
-                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-1 px-3 text-[10px] font-bold tracking-wider">
-                  POUCAS UNIDADES — Restam {product.stock}!
                 </div>
               )}
 
