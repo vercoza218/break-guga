@@ -40,11 +40,7 @@ export async function POST(request: NextRequest) {
 export async function PUT() {
   const db = getDb();
 
-  // Get all finished battles with their entries
-  const battles = db.prepare(
-    "SELECT id, winner_entry_id FROM battles WHERE status = 'finished'"
-  ).all() as { id: number; winner_entry_id: number | null }[];
-
+  // Get all finished battle entries with winner info
   const entries = db.prepare(
     `SELECT be.battle_id, be.id as entry_id, be.player_name, be.avatar, be.best_card, be.card_value, be.card_image,
             b.winner_entry_id
