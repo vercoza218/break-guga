@@ -104,7 +104,7 @@ export async function PUT() {
     const insert = db.prepare(
       'INSERT INTO battle_ranking (player_name, avatar, wins, losses, best_card_name, best_card_value) VALUES (?, ?, ?, ?, ?, ?)'
     );
-    for (const player of playerMap.values()) {
+    for (const player of Array.from(playerMap.values())) {
       insert.run(player.player_name, player.avatar, player.wins, player.losses, player.best_card_name, player.best_card_value);
     }
   });
