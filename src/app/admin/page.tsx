@@ -15,6 +15,7 @@ interface Product {
   image: string | null;
   coming_soon: number;
   collection_url: string | null;
+  is_new: number;
 }
 
 interface QueueItem {
@@ -31,6 +32,33 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history' | 'battles' | 'ranking' | 'badges'>('products');
+  const [liveStatus, setLiveStatus] = useState<boolean>(false);
+  const [liveLoading, setLiveLoading] = useState(true);
+  const { toast: adminToast } = useToast();
+
+  const fetchLiveStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      setLiveStatus(data.live_status === 'on');
+    } catch {}
+    setLiveLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (authenticated) fetchLiveStatus();
+  }, [authenticated, fetchLiveStatus]);
+
+  const toggleLive = async () => {
+    const newStatus = !liveStatus;
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ live_status: newStatus ? 'on' : 'off' }),
+    });
+    setLiveStatus(newStatus);
+    adminToast(newStatus ? 'Live ATIVADA! Vitrine visivel.' : 'Live DESATIVADA! Vitrine em modo espera.');
+  };
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -79,9 +107,37 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="md:flex md:gap-6">
+    <div className="md:flex md:gap-6 md:flex-wrap">
+      {/* Live toggle bar */}
+      <div className="w-full mb-6">
+        <div className={`rounded-2xl border-2 p-4 flex items-center justify-between transition-all ${liveStatus ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-300'}`}>
+          <div className="flex items-center gap-3">
+            <span className={`text-2xl ${liveStatus ? 'animate-urgency-pulse' : ''}`}>{liveStatus ? '🟢' : '🔴'}</span>
+            <div>
+              <p className={`font-bold text-sm ${liveStatus ? 'text-green-700' : 'text-red-700'}`}>
+                {liveStatus ? 'LIVE ATIVA — Vitrine visivel' : 'LIVE DESATIVADA — Vitrine em modo espera'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {liveStatus ? 'Produtos disponiveis para compra durante a live' : 'Todos os produtos aparecem como "Em Breve" para os visitantes'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={toggleLive}
+            disabled={liveLoading}
+            className={`font-bold px-6 py-3 rounded-xl text-sm transition-all min-h-[44px] btn-press ${
+              liveStatus
+                ? 'bg-red-500 hover:bg-red-600 text-white'
+                : 'bg-green-500 hover:bg-green-600 text-white'
+            }`}
+          >
+            {liveLoading ? '...' : liveStatus ? 'Desativar Live' : 'Ativar Live'}
+          </button>
+        </div>
+      </div>
+
       {/* Mobile: Tabs */}
-      <div className="md:hidden flex border-b border-gray-200 mb-6 overflow-x-auto">
+      <div className="md:hidden flex border-b border-gray-200 mb-6 overflow-x-auto w-full">
         <button
           onClick={() => setActiveTab('products')}
           className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
@@ -344,6 +400,16 @@ function ProductsTab() {
     toast(product.coming_soon ? 'Produto ativado!' : 'Produto marcado como Em Breve');
   };
 
+  const handleToggleNew = async (product: Product) => {
+    await fetch(`/api/products/${product.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_new: !product.is_new }),
+    });
+    fetchProducts();
+    toast(product.is_new ? 'Novidade removida!' : 'Produto marcado como Novidade!');
+  };
+
   const startEdit = (product: Product) => {
     setEditingId(product.id);
     setEditName(product.name);
@@ -501,11 +567,16 @@ function ProductsTab() {
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-gray-800">{product.name}</p>
                     {product.coming_soon ? (
                       <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
                         Em Breve
+                      </span>
+                    ) : null}
+                    {product.is_new ? (
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+                        Novidade
                       </span>
                     ) : null}
                   </div>
@@ -523,6 +594,16 @@ function ProductsTab() {
                     }`}
                   >
                     {product.coming_soon ? 'Desativar Em Breve' : 'Em Breve'}
+                  </button>
+                  <button
+                    onClick={() => handleToggleNew(product)}
+                    className={`text-sm font-bold px-4 py-2 rounded-xl transition-colors min-h-[44px] ${
+                      product.is_new
+                        ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {product.is_new ? 'Remover Novidade' : 'Novidade'}
                   </button>
                   <button
                     onClick={() => startEdit(product)}
@@ -1491,7 +1572,7 @@ function RankingTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-lg font-bold text-yellow-600">🏆 Ranking de Batalhas</h3>
+        <h3 className="text-lg font-bold text-yellow-600">🏆 Ranking de Treinadores — Temporada 1</h3>
         <div className="flex gap-2">
           <button onClick={handleSyncFromHistory} className="bg-blue-100 text-blue-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors flex items-center gap-1">
             🔄 Sincronizar com Historico

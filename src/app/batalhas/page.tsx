@@ -317,6 +317,12 @@ export default function BatalhasPage() {
               </div>
             )}
 
+            {/* Season info */}
+            <div className="text-center text-xs text-orange-600 bg-orange-100/50 rounded-lg px-3 py-2">
+              <p>Desempate: carta mais cara da temporada fica na frente.</p>
+              <p className="font-semibold mt-0.5">A temporada so reinicia quando um treinador conquistar todas as 8 insignias e se tornar Campeao de Kanto!</p>
+            </div>
+
             {ranking.length > 0 ? (
               <div className="space-y-2">
                 {ranking.map((player, i) => (
@@ -403,7 +409,7 @@ export default function BatalhasPage() {
               <div className="text-center py-6 space-y-2">
                 <p className="text-4xl">🏆</p>
                 <p className="text-gray-500 font-medium text-sm">Seja o primeiro a conquistar o ranking!</p>
-                <p className="text-gray-400 text-xs">Participe de uma batalha e entre na disputa pelas premiacoes.</p>
+                <p className="text-gray-400 text-xs">Participe de uma batalha e entre na disputa pela temporada!</p>
               </div>
             )}
           </div>

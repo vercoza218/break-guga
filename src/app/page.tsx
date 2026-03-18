@@ -11,6 +11,7 @@ interface Product {
   image: string | null;
   coming_soon: number;
   collection_url: string | null;
+  is_new: number;
 }
 
 
@@ -37,6 +38,7 @@ export default function StorePage() {
   const [battleCount, setBattleCount] = useState(0);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
+  const [liveStatus, setLiveStatus] = useState<boolean | null>(null);
   const { toast } = useToast();
   const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
@@ -53,12 +55,23 @@ export default function StorePage() {
     setBattleCount(data.filter((b: { status: string }) => b.status === 'open' || b.status === 'live').length);
   }, []);
 
+  const fetchLiveStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      setLiveStatus(data.live_status === 'on');
+    } catch {
+      setLiveStatus(true); // default to on if error
+    }
+  }, []);
+
   useEffect(() => {
     fetchProducts();
     fetchBattles();
-    const interval = setInterval(() => { fetchProducts(); fetchBattles(); }, 5000);
+    fetchLiveStatus();
+    const interval = setInterval(() => { fetchProducts(); fetchBattles(); fetchLiveStatus(); }, 5000);
     return () => clearInterval(interval);
-  }, [fetchProducts, fetchBattles]);
+  }, [fetchProducts, fetchBattles, fetchLiveStatus]);
 
   const setQty = (productId: number, qty: number) => {
     setQuantities((prev) => ({ ...prev, [productId]: qty }));
@@ -73,6 +86,8 @@ export default function StorePage() {
     }
   };
 
+  const isLiveOff = liveStatus === false;
+
   return (
     <div>
       {/* Header with logo */}
@@ -84,16 +99,35 @@ export default function StorePage() {
         <p className="text-gray-500">Escolha seus boosters e participe do break!</p>
       </div>
 
-      {/* Sealed products trust banner */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-8 flex gap-3 items-start">
-        <span className="text-2xl shrink-0 mt-0.5">📦</span>
-        <div>
-          <p className="font-semibold text-amber-800 text-sm mb-1">Produto Original e Lacrado</p>
-          <p className="text-amber-700 text-sm leading-relaxed">
-            Todos os boosters sao retirados de produtos lacrados — seja blister unitario, triplo, quadruplo, mini booster box ou booster box.
-          </p>
+      {/* Live OFF banner */}
+      {isLiveOff && (
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-6 mb-8 text-center space-y-2 animate-fade-slide-in">
+          <span className="text-4xl">📺</span>
+          <h3 className="text-lg font-bold text-purple-700">Aguarde a proxima live!</h3>
+          <p className="text-purple-600 text-sm">Vitrine atualizada em breve. Fique ligado nas nossas redes para saber quando a proxima live comecar!</p>
+          <div className="flex justify-center gap-3 pt-2">
+            <a href="https://www.tiktok.com/@gugaopkmnoficial" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-black text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-gray-800 transition-colors btn-press">
+              TikTok
+            </a>
+            <a href="https://chat.whatsapp.com/BenJb9AKRiN4UfIOuJHd99" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-green-500 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-green-600 transition-colors btn-press">
+              WhatsApp
+            </a>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Sealed products trust banner */}
+      {!isLiveOff && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-8 flex gap-3 items-start">
+          <span className="text-2xl shrink-0 mt-0.5">📦</span>
+          <div>
+            <p className="font-semibold text-amber-800 text-sm mb-1">Produto Original e Lacrado</p>
+            <p className="text-amber-700 text-sm leading-relaxed">
+              Todos os boosters sao retirados de produtos lacrados — seja blister unitario, triplo, quadruplo, mini booster box ou booster box.
+            </p>
+          </div>
+        </div>
+      )}
 
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -108,36 +142,63 @@ export default function StorePage() {
       )}
 
       <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start ${loading ? 'hidden' : ''}`}>
-        {[...products].sort((a, b) => (a.coming_soon ? 1 : 0) - (b.coming_soon ? 1 : 0)).map((product) => {
+        {[...products]
+          .sort((a, b) => {
+            // Novidade first, then coming_soon last
+            if (a.is_new && !b.is_new) return -1;
+            if (!a.is_new && b.is_new) return 1;
+            return (a.coming_soon ? 1 : 0) - (b.coming_soon ? 1 : 0);
+          })
+          .map((product) => {
           const qty = quantities[product.id] || 0;
           const total = qty * product.price;
           const soldOut = product.stock <= 0;
-          const comingSoon = !!product.coming_soon;
+          // If live is off, all products show as coming soon (unless they were already marked as coming_soon)
+          const comingSoon = isLiveOff ? true : !!product.coming_soon;
           const unavailable = soldOut || comingSoon;
-          const lowStock = !comingSoon && !soldOut && product.stock > 0 && product.stock < 20;
+          const lowStock = !comingSoon && !soldOut && product.stock > 0 && product.stock < 10;
+          const isNew = !!product.is_new && !comingSoon && !soldOut;
 
           return (
             <div
               key={product.id}
               ref={(el) => { cardRefs.current[product.id] = el; }}
-              className={`bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden shadow-sm hover:shadow-md relative ${
-                lowStock
-                  ? 'border-red-300 hover:border-red-400'
-                  : unavailable
-                    ? 'border-gray-200 opacity-70'
-                    : 'border-gray-200 hover:border-primary/30'
+              className={`rounded-2xl border-2 transition-all duration-200 overflow-hidden shadow-sm hover:shadow-md relative ${
+                isNew
+                  ? 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-400 hover:border-blue-500 ring-2 ring-blue-200/50'
+                  : lowStock
+                    ? 'bg-white border-red-300 hover:border-red-400'
+                    : unavailable
+                      ? 'bg-white border-gray-200 opacity-70'
+                      : 'bg-white border-gray-200 hover:border-primary/30'
               }`}
             >
+              {/* Novidade banner */}
+              {isNew && (
+                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-center py-1.5 px-3 text-xs font-bold tracking-wider flex items-center justify-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                  NOVIDADE
+                  <span className="inline-block w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                </div>
+              )}
+
               {/* Low stock urgency banner */}
-              {lowStock && (
+              {lowStock && !isNew && (
                 <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-1.5 px-3 text-xs font-bold tracking-wider animate-urgency-pulse">
-                  ULTIMAS UNIDADES — Restam apenas {product.stock}!
+                  ULTIMOS PRODUTOS — Restam apenas {product.stock}!
+                </div>
+              )}
+
+              {/* Low stock inside novidade */}
+              {lowStock && isNew && (
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-1 px-3 text-[10px] font-bold tracking-wider">
+                  POUCAS UNIDADES — Restam {product.stock}!
                 </div>
               )}
 
               <div className="p-4 flex gap-4">
                 {/* Product image */}
-                <div className={`w-24 h-32 rounded-xl overflow-hidden shrink-0 flex items-center justify-center ${comingSoon ? 'bg-gray-100 grayscale' : 'bg-gray-50'}`}>
+                <div className={`w-24 h-32 rounded-xl overflow-hidden shrink-0 flex items-center justify-center ${comingSoon ? 'bg-gray-100 grayscale' : isNew ? 'bg-blue-50/50' : 'bg-gray-50'}`}>
                   {product.image ? (
                     <img
                       src={product.image}
@@ -151,10 +212,10 @@ export default function StorePage() {
 
                 {/* Product info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className={`font-bold text-base mb-1 truncate ${comingSoon ? 'text-gray-400' : 'text-gray-800'}`}>
+                  <h3 className={`font-bold text-base mb-1 truncate ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-800' : 'text-gray-800'}`}>
                     {product.name}
                   </h3>
-                  <p className={`font-bold text-xl mb-2 ${comingSoon ? 'text-gray-400' : 'text-green-600'}`}>
+                  <p className={`font-bold text-xl mb-2 ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-600' : 'text-green-600'}`}>
                     R$ {product.price.toFixed(2).replace('.', ',')}
                   </p>
                   {comingSoon ? (
@@ -170,7 +231,11 @@ export default function StorePage() {
                       🔥 {product.stock} restantes
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-full px-3 py-1">
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-3 py-1 ${
+                      isNew
+                        ? 'text-blue-600 bg-blue-50 border border-blue-200'
+                        : 'text-green-600 bg-green-50 border border-green-200'
+                    }`}>
                       {product.stock} disponiveis
                     </span>
                   )}
@@ -206,7 +271,9 @@ export default function StorePage() {
                         className={`w-full font-bold py-3 rounded-xl transition-colors text-sm text-white btn-press ${
                           lowStock
                             ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
-                            : 'bg-green-500 hover:bg-green-600'
+                            : isNew
+                              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+                              : 'bg-green-500 hover:bg-green-600'
                         }`}
                       >
                         {lowStock ? 'GARANTIR O MEU' : 'QUERO'}
