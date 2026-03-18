@@ -286,7 +286,7 @@ export default function BatalhasPage() {
       {!loading && (
         <div className="mb-10">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🏅</span> Ranking de Batalhas
+            <span>🏅</span> Ranking de Treinadores — Temporada 1
           </h3>
           <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-4 md:p-6 space-y-3">
             {/* Rewards banner */}
@@ -309,8 +309,9 @@ export default function BatalhasPage() {
                   <p className="text-[10px] text-orange-600 mt-0.5">em creditos</p>
                 </div>
               </div>
-              <p className="text-center text-xs text-amber-600">Creditos em produtos na loja • Ranking reseta todo mes</p>
+              <p className="text-center text-xs text-amber-600">Creditos em produtos na loja</p>
               <p className="text-center text-[10px] text-amber-500 mt-1">Desempate: quem tirou a carta mais cara na temporada fica na frente</p>
+              <p className="text-center text-[10px] text-purple-500 mt-1 font-medium">A temporada so reinicia quando um treinador conquistar todas as 8 insignias e se tornar Campeao de Kanto!</p>
             </div>
 
             {/* Kanto Badges info */}
