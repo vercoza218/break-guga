@@ -1833,9 +1833,36 @@ function BadgesTab() {
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
+  // Remove white/near-white background from image using canvas
+  const removeWhiteBackground = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          // If pixel is white or near-white, make it transparent
+          if (r > 230 && g > 230 && b > 230) {
+            data[i + 3] = 0; // set alpha to 0
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        canvas.toBlob((blob) => resolve(blob!), 'image/png');
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleUploadBadge = async (settingsKey: string, file: File) => {
+    const processedBlob = await removeWhiteBackground(file);
     const formData = new FormData();
-    formData.append('file', file, 'badge.png');
+    formData.append('file', new File([processedBlob], 'badge.png', { type: 'image/png' }));
     const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
     if (!uploadRes.ok) { toast('Erro ao enviar imagem', 'error'); return; }
     const { url } = await uploadRes.json();
@@ -1880,7 +1907,7 @@ function BadgesTab() {
               <div className="bg-white border-2 border-gray-200 rounded-2xl p-4 text-center space-y-2 hover:border-purple-400 transition-colors shadow-sm">
                 {imageUrl ? (
                   <div className="relative mx-auto w-16 h-16">
-                    <img src={imageUrl} alt={badge.namePt} className="w-16 h-16 object-contain mx-auto" style={{mixBlendMode:'multiply'}} />
+                    <img src={imageUrl} alt={badge.namePt} className="w-16 h-16 object-contain mx-auto" />
                     <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="text-white text-xs font-bold">Trocar</span>
                     </div>
