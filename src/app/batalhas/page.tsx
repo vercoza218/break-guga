@@ -323,7 +323,7 @@ export default function BatalhasPage() {
                     const img = siteSettings[badge.settingsKey];
                     return img ? (
                       <div key={badge.id} className="flex flex-col items-center gap-0.5">
-                        <img src={img} alt={badge.namePt} className="w-8 h-8 object-contain" title={badge.namePt} />
+                        <img src={img} alt={badge.namePt} className="w-8 h-8 object-contain" style={{mixBlendMode:'multiply'}} title={badge.namePt} />
                         <span className="text-[8px] text-purple-500 font-medium">{badge.winsRequired}V</span>
                       </div>
                     ) : null;
@@ -396,6 +396,7 @@ export default function BatalhasPage() {
                               alt={badge.namePt}
                               title={`${badge.namePt} (${badge.winsRequired} vitoria${badge.winsRequired !== 1 ? 's' : ''})`}
                               className={`w-5 h-5 object-contain transition-all ${earned ? '' : 'grayscale opacity-30'}`}
+                              style={{mixBlendMode:'multiply'}}
                             />
                           ) : null;
                         })}

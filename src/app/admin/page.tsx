@@ -1880,7 +1880,7 @@ function BadgesTab() {
               <div className="bg-white border-2 border-gray-200 rounded-2xl p-4 text-center space-y-2 hover:border-purple-400 transition-colors shadow-sm">
                 {imageUrl ? (
                   <div className="relative mx-auto w-16 h-16">
-                    <img src={imageUrl} alt={badge.namePt} className="w-16 h-16 object-contain mx-auto" />
+                    <img src={imageUrl} alt={badge.namePt} className="w-16 h-16 object-contain mx-auto" style={{mixBlendMode:'multiply'}} />
                     <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="text-white text-xs font-bold">Trocar</span>
                     </div>
