@@ -279,23 +279,20 @@ export default function BatalhasPage() {
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>📅</span> Historico de Batalhas
           </h3>
-          <div className="space-y-6">
-            {sortedDateKeys.map((dateKey) => (
-              <div key={dateKey}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-px flex-1 bg-gray-200" />
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-3 py-1 rounded-full">
-                    {dateKey === 'sem-data' ? 'Sem data' : new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                  </span>
-                  <div className="h-px flex-1 bg-gray-200" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {finishedByDate[dateKey].map((battle) => (
-                    <BattleCard key={battle.id} battle={battle} myName={myName} />
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div className="space-y-3">
+            {sortedDateKeys.map((dateKey) => {
+              const dateLabel = dateKey === 'sem-data' ? 'Sem data' : new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+              const battleCount = finishedByDate[dateKey].length;
+              return (
+                <DateGroup key={dateKey} dateLabel={dateLabel} battleCount={battleCount}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {finishedByDate[dateKey].map((battle) => (
+                      <BattleCard key={battle.id} battle={battle} myName={myName} />
+                    ))}
+                  </div>
+                </DateGroup>
+              );
+            })}
           </div>
         </div>
       )}
@@ -424,6 +421,36 @@ export default function BatalhasPage() {
               WhatsApp
             </a>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DateGroup({ dateLabel, battleCount, children }: { dateLabel: string; battleCount: number; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left"
+      >
+        <span className="text-lg">📅</span>
+        <span className="font-bold text-gray-800 text-sm flex-1">{dateLabel}</span>
+        <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2.5 py-1 rounded-full">
+          {battleCount} batalha{battleCount !== 1 ? 's' : ''}
+        </span>
+        <svg
+          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 pt-1 animate-fade-slide-in">
+          {children}
         </div>
       )}
     </div>
