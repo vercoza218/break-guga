@@ -136,6 +136,14 @@ function initDb(db: Database.Database) {
     );
   `);
 
+  // Site settings (badge images, special card, etc.)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS site_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
+
   // Migration: add best_card_name and best_card_value to battle_ranking
   const brCols = db.prepare("PRAGMA table_info(battle_ranking)").all() as { name: string }[];
   if (!brCols.some(c => c.name === 'best_card_name')) {

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, FormEvent, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/components/Toast';
+import { KANTO_BADGES } from '@/lib/badges';
 
 const ImageCropper = dynamic(() => import('@/components/ImageCropper'), { ssr: false });
 
@@ -29,7 +30,7 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history' | 'battles' | 'ranking'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'queue' | 'history' | 'battles' | 'ranking' | 'badges'>('products');
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -131,6 +132,16 @@ export default function AdminPage() {
         >
           Ja Abertos
         </button>
+        <button
+          onClick={() => setActiveTab('badges')}
+          className={`px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors ${
+            activeTab === 'badges'
+              ? 'text-purple-600 border-b-2 border-purple-500'
+              : 'text-gray-400'
+          }`}
+        >
+          Insignias
+        </button>
       </div>
 
       {/* Desktop: Sidebar */}
@@ -186,6 +197,16 @@ export default function AdminPage() {
           >
             Ja Abertos
           </button>
+          <button
+            onClick={() => setActiveTab('badges')}
+            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+              activeTab === 'badges'
+                ? 'bg-purple-500 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Insignias
+          </button>
         </nav>
       </div>
 
@@ -196,6 +217,7 @@ export default function AdminPage() {
         {activeTab === 'battles' && <BattlesTab />}
         {activeTab === 'ranking' && <RankingTab />}
         {activeTab === 'history' && <HistoryTab />}
+        {activeTab === 'badges' && <BadgesTab />}
       </div>
     </div>
   );
@@ -1790,6 +1812,113 @@ function HistoryTab() {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* =================== BADGES TAB =================== */
+
+function BadgesTab() {
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchSettings = useCallback(async () => {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    setSettings(data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  const handleUploadBadge = async (settingsKey: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file, 'badge.png');
+    const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!uploadRes.ok) { toast('Erro ao enviar imagem', 'error'); return; }
+    const { url } = await uploadRes.json();
+
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [settingsKey]: url }),
+    });
+    setSettings(prev => ({ ...prev, [settingsKey]: url }));
+    toast('Insignia atualizada!');
+  };
+
+  const handleUploadSpecialCard = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file, 'special-card.png');
+    const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!uploadRes.ok) { toast('Erro ao enviar imagem', 'error'); return; }
+    const { url } = await uploadRes.json();
+
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ special_card_image: url }),
+    });
+    setSettings(prev => ({ ...prev, special_card_image: url }));
+    toast('Carta especial atualizada!');
+  };
+
+  if (loading) return <div className="text-gray-400 text-center py-8">Carregando...</div>;
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-bold text-purple-600">🏅 Insignias de Kanto</h3>
+      <p className="text-sm text-gray-500">Faca upload das imagens de cada insignia. Jogadores conquistam automaticamente conforme o numero de vitorias.</p>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {KANTO_BADGES.map((badge) => {
+          const imageUrl = settings[badge.settingsKey];
+          return (
+            <label key={badge.id} className="cursor-pointer group">
+              <div className="bg-white border-2 border-gray-200 rounded-2xl p-4 text-center space-y-2 hover:border-purple-400 transition-colors shadow-sm">
+                {imageUrl ? (
+                  <div className="relative mx-auto w-16 h-16">
+                    <img src={imageUrl} alt={badge.namePt} className="w-16 h-16 object-contain mx-auto" />
+                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-xs font-bold">Trocar</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 mx-auto rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 group-hover:border-purple-400 group-hover:text-purple-400 transition-colors">
+                    <span className="text-2xl">+</span>
+                  </div>
+                )}
+                <p className="font-bold text-gray-800 text-xs">{badge.namePt}</p>
+                <p className="text-[10px] text-purple-500 font-medium">{badge.winsRequired} vitoria{badge.winsRequired !== 1 ? 's' : ''}</p>
+              </div>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadBadge(badge.settingsKey, f); }} />
+            </label>
+          );
+        })}
+      </div>
+
+      <div className="border-t border-gray-200 pt-6">
+        <h4 className="text-md font-bold text-yellow-600 mb-2">🌟 Carta Especial — Premio Mestre de Kanto</h4>
+        <p className="text-sm text-gray-500 mb-4">Quem conquistar todas as 8 insignias pode trocar por esta carta especial. Faca upload da imagem da carta.</p>
+
+        <label className="cursor-pointer group inline-block">
+          {settings.special_card_image ? (
+            <div className="relative">
+              <img src={settings.special_card_image} alt="Carta Especial" className="w-40 h-56 rounded-xl object-cover border-2 border-yellow-400 shadow-lg" />
+              <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white text-sm font-bold">Trocar imagem</span>
+              </div>
+            </div>
+          ) : (
+            <div className="w-40 h-56 rounded-xl border-2 border-dashed border-yellow-400 flex flex-col items-center justify-center text-yellow-500 hover:bg-yellow-50 transition-colors">
+              <span className="text-3xl mb-2">🃏</span>
+              <span className="text-xs font-medium text-center px-2">Upload carta<br/>especial</span>
+            </div>
+          )}
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadSpecialCard(f); }} />
+        </label>
       </div>
     </div>
   );

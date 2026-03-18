@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useToast } from '@/components/Toast';
+import { KANTO_BADGES } from '@/lib/badges';
 
 interface BattleEntry {
   id: number;
@@ -43,6 +44,7 @@ interface RankingPlayer {
 export default function BatalhasPage() {
   const [battles, setBattles] = useState<Battle[]>([]);
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [showRules, setShowRules] = useState(false);
   const [joiningBattleId, setJoiningBattleId] = useState<number | null>(null);
@@ -68,12 +70,19 @@ export default function BatalhasPage() {
     setRanking(data);
   }, []);
 
+  const fetchSettings = useCallback(async () => {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    setSiteSettings(data);
+  }, []);
+
   useEffect(() => {
     fetchBattles();
     fetchRanking();
+    fetchSettings();
     const interval = setInterval(() => { fetchBattles(); fetchRanking(); }, 5000);
     return () => clearInterval(interval);
-  }, [fetchBattles, fetchRanking]);
+  }, [fetchBattles, fetchRanking, fetchSettings]);
 
   const handleUploadAvatar = async (file: File): Promise<string | null> => {
     setUploading(true);
@@ -304,6 +313,34 @@ export default function BatalhasPage() {
               <p className="text-center text-[10px] text-amber-500 mt-1">Desempate: quem tirou a carta mais cara na temporada fica na frente</p>
             </div>
 
+            {/* Kanto Badges info */}
+            {KANTO_BADGES.some(b => siteSettings[b.settingsKey]) && (
+              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 space-y-3">
+                <p className="text-center font-bold text-purple-700 text-sm">🏅 Insignias de Kanto</p>
+                <p className="text-center text-[11px] text-purple-600">Conquiste insignias a cada vitoria! Colecione todas as 8 e troque por uma carta especial.</p>
+                <div className="flex justify-center gap-2 flex-wrap">
+                  {KANTO_BADGES.map((badge) => {
+                    const img = siteSettings[badge.settingsKey];
+                    return img ? (
+                      <div key={badge.id} className="flex flex-col items-center gap-0.5">
+                        <img src={img} alt={badge.namePt} className="w-8 h-8 object-contain" title={badge.namePt} />
+                        <span className="text-[8px] text-purple-500 font-medium">{badge.winsRequired}V</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+                {siteSettings.special_card_image && (
+                  <div className="flex items-center justify-center gap-3 pt-2 border-t border-purple-200">
+                    <img src={siteSettings.special_card_image} alt="Carta Especial" className="w-12 h-16 rounded-lg object-cover border border-yellow-400 shadow-sm" />
+                    <div>
+                      <p className="text-xs font-bold text-yellow-700">🌟 Premio Mestre de Kanto</p>
+                      <p className="text-[10px] text-yellow-600">Colecione todas as 8 insignias e troque por esta carta!</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {ranking.length > 0 ? (
               <div className="space-y-2">
                 {ranking.map((player, i) => (
@@ -340,13 +377,29 @@ export default function BatalhasPage() {
                         {player.player_name.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    {/* Name + stats */}
+                    {/* Name + stats + badges */}
                     <div className="flex-1 min-w-0">
                       <p className={`font-bold text-sm truncate ${
                         i === 0 ? 'text-yellow-800' : i === 1 ? 'text-gray-700' : i === 2 ? 'text-orange-800' : 'text-gray-800'
                       }`}>
                         {player.player_name}
                       </p>
+                      {/* Kanto badges */}
+                      <div className="flex gap-0.5 my-0.5">
+                        {KANTO_BADGES.map((badge) => {
+                          const img = siteSettings[badge.settingsKey];
+                          const earned = player.wins >= badge.winsRequired;
+                          return img ? (
+                            <img
+                              key={badge.id}
+                              src={img}
+                              alt={badge.namePt}
+                              title={`${badge.namePt} (${badge.winsRequired} vitoria${badge.winsRequired !== 1 ? 's' : ''})`}
+                              className={`w-5 h-5 object-contain transition-all ${earned ? '' : 'grayscale opacity-30'}`}
+                            />
+                          ) : null;
+                        })}
+                      </div>
                       <p className="text-xs text-gray-500">
                         {player.total} batalha{player.total !== 1 ? 's' : ''} | {player.wins}V {player.losses}D
                       </p>
