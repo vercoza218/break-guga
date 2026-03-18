@@ -1892,12 +1892,43 @@ function BadgesTab() {
     toast('Carta especial atualizada!');
   };
 
+  const handleRemoveAllBadges = async () => {
+    const keysToRemove: Record<string, string> = {};
+    for (const badge of KANTO_BADGES) {
+      keysToRemove[badge.settingsKey] = '';
+    }
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(keysToRemove),
+    });
+    setSettings(prev => {
+      const updated = { ...prev };
+      for (const badge of KANTO_BADGES) {
+        delete updated[badge.settingsKey];
+      }
+      return updated;
+    });
+    toast('Todas as insignias removidas!');
+  };
+
   if (loading) return <div className="text-gray-400 text-center py-8">Carregando...</div>;
+
+  const hasBadges = KANTO_BADGES.some(b => settings[b.settingsKey]);
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-purple-600">🏅 Insignias de Kanto</h3>
-      <p className="text-sm text-gray-500">Faca upload das imagens de cada insignia. Jogadores conquistam automaticamente conforme o numero de vitorias.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-purple-600">🏅 Insignias de Kanto</h3>
+          <p className="text-sm text-gray-500">Faca upload das imagens de cada insignia. Jogadores conquistam automaticamente conforme o numero de vitorias.</p>
+        </div>
+        {hasBadges && (
+          <button onClick={handleRemoveAllBadges} className="text-xs text-red-500 hover:text-red-700 border border-red-300 hover:border-red-500 rounded-lg px-3 py-1.5 transition-colors whitespace-nowrap">
+            Remover Todas
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {KANTO_BADGES.map((badge) => {
