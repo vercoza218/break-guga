@@ -289,31 +289,6 @@ export default function BatalhasPage() {
             <span>🏅</span> Ranking de Treinadores — Temporada 1
           </h3>
           <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-4 md:p-6 space-y-3">
-            {/* Rewards banner */}
-            <div className="bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-300 rounded-xl p-4 text-sm space-y-3">
-              <p className="text-center font-bold text-amber-800">🎁 Premiacoes Mensais</p>
-              <div className="grid grid-cols-3 gap-2 text-center items-end">
-                <div className="bg-gray-300/20 border border-gray-400 rounded-xl p-3">
-                  <div className="text-xl mb-1">🥈</div>
-                  <p className="font-bold text-gray-600 text-sm">R$ 100</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">em creditos</p>
-                </div>
-                <div className="bg-yellow-400/20 border-2 border-yellow-400 rounded-xl p-4 -mt-1 shadow-md">
-                  <div className="text-3xl mb-1">🥇</div>
-                  <p className="font-bold text-yellow-700 text-lg">R$ 150</p>
-                  <p className="text-[10px] text-yellow-600 mt-0.5">em creditos</p>
-                </div>
-                <div className="bg-orange-300/20 border border-orange-400 rounded-xl p-3">
-                  <div className="text-xl mb-1">🥉</div>
-                  <p className="font-bold text-orange-700 text-sm">R$ 50</p>
-                  <p className="text-[10px] text-orange-600 mt-0.5">em creditos</p>
-                </div>
-              </div>
-              <p className="text-center text-xs text-amber-600">Creditos em produtos na loja</p>
-              <p className="text-center text-[10px] text-amber-500 mt-1">Desempate: quem tirou a carta mais cara na temporada fica na frente</p>
-              <p className="text-center text-[10px] text-purple-500 mt-1 font-medium">A temporada so reinicia quando um treinador conquistar todas as 8 insignias e se tornar Campeao de Kanto!</p>
-            </div>
-
             {/* Kanto Badges info */}
             {KANTO_BADGES.some(b => siteSettings[b.settingsKey]) && (
               <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 space-y-3">
