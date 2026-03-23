@@ -1997,6 +1997,20 @@ function BadgesTab() {
     toast('Carta especial atualizada!');
   };
 
+  const handleRemoveSpecialCard = async () => {
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ special_card_image: '' }),
+    });
+    setSettings(prev => {
+      const updated = { ...prev };
+      delete updated.special_card_image;
+      return updated;
+    });
+    toast('Carta especial removida!');
+  };
+
   const handleRemoveAllBadges = async () => {
     const keysToRemove: Record<string, string> = {};
     for (const badge of KANTO_BADGES) {
@@ -2066,22 +2080,32 @@ function BadgesTab() {
         <h4 className="text-md font-bold text-yellow-600 mb-2">🌟 Carta Especial — Premio Mestre de Kanto</h4>
         <p className="text-sm text-gray-500 mb-4">Quem conquistar todas as 8 insignias pode trocar por esta carta especial. Faca upload da imagem da carta.</p>
 
-        <label className="cursor-pointer group inline-block">
-          {settings.special_card_image ? (
-            <div className="relative">
-              <img src={settings.special_card_image} alt="Carta Especial" className="w-40 h-56 rounded-xl object-cover border-2 border-yellow-400 shadow-lg" />
-              <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-white text-sm font-bold">Trocar imagem</span>
+        <div className="flex items-start gap-4">
+          <label className="cursor-pointer group inline-block">
+            {settings.special_card_image ? (
+              <div className="relative">
+                <img src={settings.special_card_image} alt="Carta Especial" className="w-40 h-56 rounded-xl object-cover border-2 border-yellow-400 shadow-lg" />
+                <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-white text-sm font-bold">Trocar imagem</span>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="w-40 h-56 rounded-xl border-2 border-dashed border-yellow-400 flex flex-col items-center justify-center text-yellow-500 hover:bg-yellow-50 transition-colors">
-              <span className="text-3xl mb-2">🃏</span>
-              <span className="text-xs font-medium text-center px-2">Upload carta<br/>especial</span>
-            </div>
+            ) : (
+              <div className="w-40 h-56 rounded-xl border-2 border-dashed border-yellow-400 flex flex-col items-center justify-center text-yellow-500 hover:bg-yellow-50 transition-colors">
+                <span className="text-3xl mb-2">🃏</span>
+                <span className="text-xs font-medium text-center px-2">Upload carta<br/>especial</span>
+              </div>
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadSpecialCard(f); }} />
+          </label>
+          {settings.special_card_image && (
+            <button
+              onClick={handleRemoveSpecialCard}
+              className="text-xs text-red-500 hover:text-red-700 border border-red-300 hover:border-red-500 rounded-lg px-3 py-1.5 transition-colors whitespace-nowrap mt-1"
+            >
+              Remover Carta
+            </button>
           )}
-          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadSpecialCard(f); }} />
-        </label>
+        </div>
       </div>
     </div>
   );
