@@ -12,6 +12,7 @@ interface Product {
   coming_soon: number;
   collection_url: string | null;
   is_new: number;
+  description: string | null;
 }
 
 
@@ -222,9 +223,17 @@ export default function StorePage() {
                   <h3 className={`font-bold text-base mb-1 truncate ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-800' : 'text-gray-800'}`}>
                     {product.name}
                   </h3>
-                  <p className={`font-bold text-xl mb-2 ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-600' : 'text-green-600'}`}>
-                    R$ {product.price.toFixed(2).replace('.', ',')}
-                  </p>
+                  {!isLiveOff && (
+                    <p className={`font-bold text-xl mb-1 ${isNew ? 'text-blue-600' : 'text-green-600'}`}>
+                      R$ {product.price.toFixed(2).replace('.', ',')}
+                    </p>
+                  )}
+                  {product.description && (
+                    <p className={`text-xs mb-2 leading-relaxed line-clamp-2 ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-600/70' : 'text-gray-500'}`}>
+                      {product.description}
+                    </p>
+                  )}
+                  {!product.description && isLiveOff && <div className="mb-2" />}
                   {comingSoon ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
                       Em Breve

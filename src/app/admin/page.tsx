@@ -16,6 +16,7 @@ interface Product {
   coming_soon: number;
   collection_url: string | null;
   is_new: number;
+  description: string | null;
 }
 
 interface QueueItem {
@@ -295,6 +296,8 @@ function ProductsTab() {
   const [editStock, setEditStock] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editCollectionUrl, setEditCollectionUrl] = useState('');
+  const [description, setDescription] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -352,6 +355,7 @@ function ProductsTab() {
         price: parseFloat(price),
         image: imageUrl,
         collection_url: collectionUrl || null,
+        description: description || null,
       }),
     });
 
@@ -359,6 +363,7 @@ function ProductsTab() {
     setStock('');
     setPrice('');
     setCollectionUrl('');
+    setDescription('');
     setCroppedBlob(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -376,6 +381,7 @@ function ProductsTab() {
         stock: parseInt(editStock),
         price: parseFloat(editPrice),
         collection_url: editCollectionUrl || null,
+        description: editDescription || null,
       }),
     });
     setEditingId(null);
@@ -416,6 +422,7 @@ function ProductsTab() {
     setEditStock(product.stock.toString());
     setEditPrice(product.price.toString());
     setEditCollectionUrl(product.collection_url || '');
+    setEditDescription(product.description || '');
   };
 
   return (
@@ -468,6 +475,13 @@ function ProductsTab() {
           value={collectionUrl}
           onChange={(e) => setCollectionUrl(e.target.value)}
           className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
+        />
+        <textarea
+          placeholder="Descricao do produto — opcional (ex: Booster da colecao Scarlet & Violet com 10 cartas)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 focus:border-primary focus:outline-none resize-none text-sm"
         />
 
         {imagePreview && (
@@ -549,6 +563,13 @@ function ProductsTab() {
                   placeholder="Link da colecao (Liga Pokemon)"
                   className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none min-h-[44px]"
                 />
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Descricao do produto"
+                  rows={2}
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:border-primary focus:outline-none resize-none text-sm"
+                />
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(product.id)}
@@ -583,6 +604,9 @@ function ProductsTab() {
                   <p className="text-sm text-gray-500">
                     Estoque: {product.stock} | R$ {product.price.toFixed(2)}
                   </p>
+                  {product.description && (
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{product.description}</p>
+                  )}
                 </div>
                 <div className="flex gap-2 shrink-0 flex-wrap">
                   <button

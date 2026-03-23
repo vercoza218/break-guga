@@ -12,15 +12,15 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const db = getDb();
   const body = await request.json();
-  const { name, stock, price, image, collection_url, is_new } = body;
+  const { name, stock, price, image, collection_url, is_new, description } = body;
 
   if (!name || stock == null || price == null) {
     return NextResponse.json({ error: 'Campos obrigatórios: name, stock, price' }, { status: 400 });
   }
 
   const result = db.prepare(
-    'INSERT INTO products (name, stock, price, image, collection_url, is_new) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(name, stock, price, image || null, collection_url || null, is_new ? 1 : 0);
+    'INSERT INTO products (name, stock, price, image, collection_url, is_new, description) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(name, stock, price, image || null, collection_url || null, is_new ? 1 : 0, description || null);
 
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
   return NextResponse.json(product, { status: 201 });

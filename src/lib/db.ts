@@ -72,6 +72,12 @@ function initDb(db: Database.Database) {
     db.exec("ALTER TABLE products ADD COLUMN is_new INTEGER NOT NULL DEFAULT 0");
   }
 
+  // Migration: add description column if missing
+  const prodCols4 = db.prepare("PRAGMA table_info(products)").all() as { name: string }[];
+  if (!prodCols4.some(c => c.name === 'description')) {
+    db.exec("ALTER TABLE products ADD COLUMN description TEXT");
+  }
+
   // Battles system
   db.exec(`
     CREATE TABLE IF NOT EXISTS battles (
