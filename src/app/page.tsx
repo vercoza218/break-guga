@@ -95,7 +95,7 @@ export default function StorePage() {
       <div className="text-center mb-8">
         <img src="/logo.png" alt="Gugaopkmn" className="w-24 h-24 rounded-full object-cover mx-auto mb-4 shadow-lg" />
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-          Boosters Disponiveis
+          Produtos Disponiveis
         </h2>
         <p className="text-gray-500">Escolha seus boosters e participe do break!</p>
       </div>
@@ -229,7 +229,7 @@ export default function StorePage() {
                     </p>
                   )}
                   {product.description && (
-                    <p className={`text-xs mb-2 leading-relaxed line-clamp-2 ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-600/70' : 'text-gray-500'}`}>
+                    <p className={`text-xs mb-2 leading-relaxed ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-600/70' : 'text-gray-500'}`}>
                       {product.description}
                     </p>
                   )}
