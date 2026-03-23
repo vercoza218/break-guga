@@ -18,6 +18,17 @@ body {
   border-radius: 4px;
 }
 
+.scrollbar-thin::-webkit-scrollbar {
+  width: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
 input, select, textarea {
   font-size: 16px !important;
 }

@@ -229,9 +229,9 @@ export default function StorePage() {
                     </p>
                   )}
                   {product.description && (
-                    <p className={`text-xs mb-2 leading-relaxed ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-600/70' : 'text-gray-500'}`}>
+                    <div className={`text-xs mb-2 leading-relaxed max-h-16 overflow-y-auto whitespace-pre-line scrollbar-thin ${comingSoon ? 'text-gray-400' : isNew ? 'text-blue-600/70' : 'text-gray-500'}`}>
                       {product.description}
-                    </p>
+                    </div>
                   )}
                   {!product.description && isLiveOff && <div className="mb-2" />}
                   {comingSoon ? (
