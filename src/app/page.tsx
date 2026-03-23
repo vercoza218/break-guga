@@ -130,19 +130,19 @@ export default function StorePage() {
         </div>
       )}
 
-      {loading && (
+      {!isLiveOff && loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3].map((i) => <ProductSkeleton key={i} />)}
         </div>
       )}
 
-      {!loading && products.length === 0 && (
+      {!isLiveOff && !loading && products.length === 0 && (
         <p className="text-gray-400 text-center py-12">
           Nenhum produto cadastrado ainda.
         </p>
       )}
 
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start ${loading ? 'hidden' : ''}`}>
+      {!isLiveOff && <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start ${loading ? 'hidden' : ''}`}>
         {[...products]
           .sort((a, b) => {
             // Order: NOVIDADE >> ULTIMOS PRODUTOS >> DISPONIVEIS >> ESGOTADO >> EM BREVE
@@ -360,7 +360,7 @@ export default function StorePage() {
             </div>
           );
         })}
-      </div>
+      </div>}
 
       {/* Battles banner */}
       <div className="mt-10 mb-4">
